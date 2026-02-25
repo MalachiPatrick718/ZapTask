@@ -1,0 +1,315 @@
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type {
+  Task,
+  EnergyProfile,
+  EnergyLevel,
+  TimeBlock,
+  UserProfile,
+} from '../../shared/types';
+import { DEFAULT_ENERGY_PROFILE } from '../../shared/types';
+
+// === View & Panel types ===
+export type ActiveView = 'tasks' | 'suggested' | 'day' | 'settings';
+export type ActivePanel = null | 'taskDetail' | 'addTask' | 'energyCheckin';
+
+export interface ToastItem {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
+
+// === Tool sync state (UI only — credentials stored via IPC) ===
+export interface ToolState {
+  toolId: 'jira' | 'notion' | 'gcal';
+  connected: boolean;
+  email: string;
+  lastSyncAt: string | null;
+  syncStatus: 'idle' | 'syncing' | 'error';
+  syncError: string | null;
+}
+
+const DEFAULT_TOOLS: ToolState[] = [
+  { toolId: 'jira', connected: false, email: '', lastSyncAt: null, syncStatus: 'idle', syncError: null },
+  { toolId: 'notion', connected: false, email: '', lastSyncAt: null, syncStatus: 'idle', syncError: null },
+  { toolId: 'gcal', connected: false, email: '', lastSyncAt: null, syncStatus: 'idle', syncError: null },
+];
+
+// === Pomodoro ===
+const FOCUS_SECONDS = 25 * 60;
+const BREAK_SECONDS = 5 * 60;
+const LONG_BREAK_SECONDS = 15 * 60;
+
+export interface PomodoroSession {
+  taskId: string;
+  phase: 'focus' | 'break';
+  durationSeconds: number;
+  remainingSeconds: number;
+  isRunning: boolean;
+  completedCount: number;
+}
+
+// === Store interface ===
+interface ZapStore {
+  // User
+  user: UserProfile | null;
+  setUser: (profile: UserProfile) => void;
+
+  // Onboarding
+  onboardingComplete: boolean;
+  setOnboardingComplete: (done: boolean) => void;
+
+  // Tasks
+  tasks: Task[];
+  setTasks: (tasks: Task[]) => void;
+  addTask: (task: Task) => void;
+  updateTask: (id: string, changes: Partial<Task>) => void;
+  deleteTask: (id: string) => void;
+
+  // Energy
+  energyProfile: EnergyProfile;
+  setEnergyProfile: (profile: EnergyProfile) => void;
+  currentEnergyOverride: EnergyLevel | null;
+  setCurrentEnergyOverride: (level: EnergyLevel | null) => void;
+
+  // Connected tools
+  tools: ToolState[];
+  setToolConnected: (toolId: string, connected: boolean, email?: string) => void;
+  updateToolSync: (toolId: string, syncStatus: ToolState['syncStatus'], lastSyncAt?: string, syncError?: string | null) => void;
+
+  // Notifications
+  notificationsEnabled: boolean;
+  setNotificationsEnabled: (v: boolean) => void;
+
+  // Theme
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
+
+  // UI
+  activeView: ActiveView;
+  setActiveView: (view: ActiveView) => void;
+  activePanel: ActivePanel;
+  setActivePanel: (panel: ActivePanel) => void;
+  selectedTaskId: string | null;
+  selectTask: (id: string | null) => void;
+
+  // Toasts
+  toasts: ToastItem[];
+  addToast: (message: string, type?: ToastItem['type']) => void;
+  removeToast: (id: string) => void;
+
+  // Schedule (Day View)
+  schedule: TimeBlock[];
+  addTimeBlock: (block: TimeBlock) => void;
+  removeTimeBlock: (id: string) => void;
+  setSchedule: (blocks: TimeBlock[]) => void;
+
+  // Pomodoro
+  pomodoroSession: PomodoroSession | null;
+  startPomodoro: (taskId: string) => void;
+  pausePomodoro: () => void;
+  resumePomodoro: () => void;
+  stopPomodoro: () => void;
+  tickPomodoro: () => void;
+  completePomodoroPhase: () => void;
+}
+
+export const useStore = create<ZapStore>()(
+  persist(
+    (set) => ({
+      // User
+      user: null,
+      setUser: (profile) => set({ user: profile }),
+
+      // Onboarding
+      onboardingComplete: false,
+      setOnboardingComplete: (done) => set({ onboardingComplete: done }),
+
+      // Tasks
+      tasks: [],
+      setTasks: (tasks) => set({ tasks }),
+      addTask: (task) => set((s) => ({ tasks: [...s.tasks, task] })),
+      updateTask: (id, changes) => set((s) => {
+        const oldTask = s.tasks.find((t) => t.id === id);
+        const newState: Partial<ZapStore> = {
+          tasks: s.tasks.map((t) => t.id === id ? { ...t, ...changes, updatedAt: new Date().toISOString() } : t),
+        };
+        // If due date changed, remove schedule blocks for this task on the old date
+        if (changes.dueDate && oldTask && oldTask.dueDate !== changes.dueDate) {
+          newState.schedule = s.schedule.filter(
+            (b) => !(b.taskId === id && b.date !== changes.dueDate),
+          );
+        }
+        return newState;
+      }),
+      deleteTask: (id) => set((s) => ({
+        tasks: s.tasks.filter((t) => t.id !== id),
+        // Also remove any schedule blocks for the deleted task
+        schedule: s.schedule.filter((b) => b.taskId !== id),
+      })),
+
+      // Energy
+      energyProfile: DEFAULT_ENERGY_PROFILE,
+      setEnergyProfile: (profile) => set({ energyProfile: profile }),
+      currentEnergyOverride: null,
+      setCurrentEnergyOverride: (level) => set({ currentEnergyOverride: level }),
+
+      // Connected tools
+      tools: DEFAULT_TOOLS,
+      setToolConnected: (toolId, connected, email) => set((s) => ({
+        tools: s.tools.map((t) =>
+          t.toolId === toolId ? { ...t, connected, email: email ?? t.email } : t
+        ),
+      })),
+      updateToolSync: (toolId, syncStatus, lastSyncAt, syncError) => set((s) => ({
+        tools: s.tools.map((t) =>
+          t.toolId === toolId
+            ? { ...t, syncStatus, lastSyncAt: lastSyncAt ?? t.lastSyncAt, syncError: syncError ?? null }
+            : t
+        ),
+      })),
+
+      // Notifications
+      notificationsEnabled: true,
+      setNotificationsEnabled: (v) => set({ notificationsEnabled: v }),
+
+      // Theme
+      theme: 'dark',
+      setTheme: (theme) => set({ theme }),
+
+      // UI
+      activeView: 'tasks',
+      setActiveView: (view) => set({ activeView: view }),
+      activePanel: null,
+      setActivePanel: (panel) => set({ activePanel: panel }),
+      selectedTaskId: null,
+      selectTask: (id) => set({ selectedTaskId: id }),
+
+      // Toasts
+      toasts: [],
+      addToast: (message, type = 'info') => set((s) => ({
+        toasts: [...s.toasts, { id: crypto.randomUUID(), message, type }],
+      })),
+      removeToast: (id) => set((s) => ({
+        toasts: s.toasts.filter((t) => t.id !== id),
+      })),
+
+      // Schedule
+      schedule: [],
+      addTimeBlock: (block) => set((s) => ({ schedule: [...s.schedule, block] })),
+      removeTimeBlock: (id) => set((s) => ({ schedule: s.schedule.filter((b) => b.id !== id) })),
+      setSchedule: (blocks) => set({ schedule: blocks }),
+
+      // Pomodoro
+      pomodoroSession: null,
+      startPomodoro: (taskId) => set({
+        pomodoroSession: {
+          taskId,
+          phase: 'focus',
+          durationSeconds: FOCUS_SECONDS,
+          remainingSeconds: FOCUS_SECONDS,
+          isRunning: true,
+          completedCount: 0,
+        },
+      }),
+      pausePomodoro: () => set((s) => {
+        if (!s.pomodoroSession) return {};
+        return { pomodoroSession: { ...s.pomodoroSession, isRunning: false } };
+      }),
+      resumePomodoro: () => set((s) => {
+        if (!s.pomodoroSession) return {};
+        return { pomodoroSession: { ...s.pomodoroSession, isRunning: true } };
+      }),
+      stopPomodoro: () => set({ pomodoroSession: null }),
+      tickPomodoro: () => set((s) => {
+        if (!s.pomodoroSession || !s.pomodoroSession.isRunning) return {};
+        const next = s.pomodoroSession.remainingSeconds - 1;
+        if (next <= 0) return {}; // completePomodoroPhase handles the transition
+        return { pomodoroSession: { ...s.pomodoroSession, remainingSeconds: next } };
+      }),
+      completePomodoroPhase: () => set((s) => {
+        if (!s.pomodoroSession) return {};
+        const session = s.pomodoroSession;
+        if (session.phase === 'focus') {
+          const newCount = session.completedCount + 1;
+          const breakDuration = newCount % 4 === 0 ? LONG_BREAK_SECONDS : BREAK_SECONDS;
+          return {
+            pomodoroSession: {
+              ...session,
+              phase: 'break',
+              durationSeconds: breakDuration,
+              remainingSeconds: breakDuration,
+              completedCount: newCount,
+              isRunning: true,
+            },
+          };
+        }
+        // break → focus
+        return {
+          pomodoroSession: {
+            ...session,
+            phase: 'focus',
+            durationSeconds: FOCUS_SECONDS,
+            remainingSeconds: FOCUS_SECONDS,
+            isRunning: true,
+          },
+        };
+      }),
+    }),
+    {
+      name: 'zaptask-store',
+      partialize: (state) => ({
+        user: state.user,
+        onboardingComplete: state.onboardingComplete,
+        energyProfile: state.energyProfile,
+        tools: state.tools,
+        theme: state.theme,
+        notificationsEnabled: state.notificationsEnabled,
+      }),
+      merge: (persisted, current) => {
+        const p = persisted as Partial<ZapStore> | undefined;
+        return {
+          ...current,
+          // Only restore specific fields — tasks come from SQLite, schedule starts fresh
+          user: p?.user ?? current.user,
+          onboardingComplete: p?.onboardingComplete ?? current.onboardingComplete,
+          theme: p?.theme === 'light' || p?.theme === 'dark' ? p.theme : current.theme,
+          energyProfile: p?.energyProfile?.blocks ? p.energyProfile : current.energyProfile,
+          tools: Array.isArray(p?.tools) && p.tools.length > 0 ? p.tools : current.tools,
+          notificationsEnabled: typeof p?.notificationsEnabled === 'boolean' ? p.notificationsEnabled : current.notificationsEnabled,
+        };
+      },
+    },
+  ),
+);
+
+// One-time cleanup: remove stale data from localStorage
+try {
+  const raw = localStorage.getItem('zaptask-store');
+  if (raw) {
+    const parsed = JSON.parse(raw);
+    let changed = false;
+    // Remove legacy tasks (now in SQLite)
+    if (parsed?.state?.tasks) {
+      delete parsed.state.tasks;
+      changed = true;
+    }
+    // Clear schedule — will be repopulated from user actions
+    if (Array.isArray(parsed?.state?.schedule) && parsed.state.schedule.length > 0) {
+      parsed.state.schedule = [];
+      changed = true;
+    }
+    if (changed) {
+      localStorage.setItem('zaptask-store', JSON.stringify(parsed));
+    }
+  }
+} catch { /* ignore */ }
+
+// === Helper: get current energy level ===
+export function getCurrentEnergy(profile: EnergyProfile, override: EnergyLevel | null): EnergyLevel {
+  if (override) return override;
+  const hour = new Date().getHours();
+  const blocks = profile?.blocks ?? DEFAULT_ENERGY_PROFILE.blocks;
+  const block = blocks.find((b) => hour >= b.start && hour < b.end);
+  return block?.level ?? 'medium';
+}

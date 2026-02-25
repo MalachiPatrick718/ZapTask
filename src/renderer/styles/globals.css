@@ -1,0 +1,128 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Surfaces — warm charcoal inspired by sushi nori */
+  --bg: #0D0C10;
+  --surface: #14131A;
+  --surface-up: #1B1A22;
+  --surface-high: #222128;
+
+  /* Borders */
+  --border: #28272E;
+  --border-glow: #38374A;
+
+  /* Accent — warm orange/coral from ZapTask sushi logo */
+  --accent: #F06D3D;
+  --accent-dim: rgba(240, 109, 61, 0.15);
+
+  /* Semantic */
+  --green: #1FFFA0;
+  --yellow: #FFD166;
+  --red: #FF5470;
+  --teal: #4ECDC4;
+
+  /* Text (dark theme) */
+  --text1: #FFFFFF;
+  --text2: #C4C4E6;
+  --text3: #7A7AA5;
+
+  /* Energy */
+  --energy-high: #FFD166;
+  --energy-med: #4ECDC4;
+  --energy-low: #6880A0;
+
+  /* Fonts */
+  --font-display: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+}
+
+[data-theme="light"] {
+  --bg: #FEF7F4;
+  --surface: #FFFFFF;
+  --surface-up: #F5EDE9;
+  --surface-high: #EBE1DC;
+  --border: #DDD3CC;
+  --border-glow: #C8BBB0;
+  --accent: #E05A2B;
+  --accent-dim: rgba(224, 90, 43, 0.12);
+  --green: #10CC80;
+  --yellow: #D9A540;
+  --red: #E0405A;
+  --teal: #3BB5AC;
+  /* Text (light theme) */
+  --text1: #1E1610;
+  --text2: #4F3F34;
+  --text3: #7E6F63;
+  --energy-high: #D9A540;
+  --energy-med: #3BB5AC;
+  --energy-low: #6B7A8A;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  color: var(--text1);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text3);
+}
+
+/* Drag regions for frameless window */
+.drag-region {
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Focus reset */
+*:focus {
+  outline: none;
+}
+*:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Input reset */
+input, textarea, select, button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+}
+
+button {
+  cursor: pointer;
+}
