@@ -75,7 +75,7 @@ jobs:
 
       - name: Rename DMG to include architecture
         run: |
-          for f in out/make/**/*.dmg; do
+          find out/make -name "*.dmg" | while read f; do
             dir=$(dirname "$f")
             base=$(basename "$f" .dmg)
             mv "$f" "$dir/${base}-${{ matrix.arch }}.dmg"
