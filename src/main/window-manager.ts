@@ -13,10 +13,10 @@ export function createWindow(): BrowserWindow {
   const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
 
   mainWindow = new BrowserWindow({
-    width: 400,
+    width: 360,
     height: 660,
     x: screenWidth - 360 - 20,
-    y: screenHeight - 660 - 20,
+    y: 20,
     minWidth: 360,
     minHeight: 660,
     maxWidth: 360,
@@ -28,6 +28,7 @@ export function createWindow(): BrowserWindow {
     resizable: false,
     hasShadow: true,
     backgroundColor: '#00000000',
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -44,6 +45,22 @@ export function createWindow(): BrowserWindow {
       path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`),
     );
   }
+
+  // Show window once content is ready
+  mainWindow.once('ready-to-show', () => {
+    mainWindow?.show();
+  });
+
+  // Log renderer load errors
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
+    console.error('[Window] Failed to load:', errorCode, errorDescription);
+  });
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('[Window] Renderer loaded successfully');
+  });
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    console.error('[Window] Render process gone:', details.reason);
+  });
 
   // Open devtools in development
   if (!app.isPackaged) {
