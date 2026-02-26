@@ -1,6 +1,7 @@
 const integrations = [
   { name: "Jira", color: "#2684FF" },
   { name: "Asana", color: "#F06A6A" },
+  { name: "Monday.com", color: "#FF3D57" },
   { name: "Notion", color: "#000000" },
   { name: "Google Calendar", color: "#4285F4" },
   { name: "Outlook", color: "#0078D4" },
@@ -12,7 +13,7 @@ export function Integrations() {
     <section className="py-16 px-6 border-y border-border bg-surface">
       <div className="max-w-4xl mx-auto text-center">
         <p className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-8">
-          Works with your favorite tools
+          Works with your favorite tools &mdash; and more to come
         </p>
         <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
           {integrations.map((tool) => (

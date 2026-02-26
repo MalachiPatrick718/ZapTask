@@ -3,7 +3,7 @@ const steps = [
     number: "1",
     title: "Connect",
     description:
-      "Link your Jira, Asana, Notion, Google Calendar, or Outlook accounts in seconds with secure OAuth.",
+      "Link your Jira, Asana, Monday.com, Notion, Google Calendar, Outlook, and more in seconds with secure OAuth.",
   },
   {
     number: "2",
