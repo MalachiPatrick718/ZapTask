@@ -63,6 +63,15 @@ jobs:
           # Clean up certificate file
           rm certificate.p12
 
+      - name: Verify signing identity
+        run: |
+          echo "Available signing identities:"
+          security find-identity -v -p codesigning
+          echo ""
+          echo "APPLE_IDENTITY env value: $APPLE_IDENTITY"
+        env:
+          APPLE_IDENTITY: "Developer ID Application: ${{ secrets.APPLE_IDENTITY_NAME }}"
+
       - name: Build & Make (macOS ${{ matrix.arch }})
         run: npm run make -- --arch=${{ matrix.arch }}
         env:
