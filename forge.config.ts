@@ -7,6 +7,7 @@ import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
 import path from 'path';
 import fs from 'fs';
+import { execSync } from 'child_process';
 
 const isSigning = !!process.env.APPLE_IDENTITY;
 
@@ -41,23 +42,27 @@ const config: ForgeConfig = {
       },
     }),
     afterCopy: [
-      // Copy better-sqlite3 native module into the packaged app so require() works
-      (buildPath: string, _electronVersion: string, _platform: string, _arch: string, callback: (err?: Error) => void) => {
-        const src = path.resolve(__dirname, 'node_modules/better-sqlite3');
-        const dest = path.join(buildPath, 'node_modules/better-sqlite3');
+      (buildPath: string, electronVersion: string, platform: string, arch: string, callback: (err?: Error) => void) => {
+        const modules = ['better-sqlite3', 'bindings', 'file-uri-to-path'];
         try {
-          fs.cpSync(src, dest, { recursive: true });
-          // Also copy bindings dependency
-          const bindingsSrc = path.resolve(__dirname, 'node_modules/bindings');
-          const bindingsDest = path.join(buildPath, 'node_modules/bindings');
-          if (fs.existsSync(bindingsSrc)) {
-            fs.cpSync(bindingsSrc, bindingsDest, { recursive: true });
+          // Copy modules into the packaged app
+          for (const mod of modules) {
+            const src = path.resolve(__dirname, 'node_modules', mod);
+            const dest = path.join(buildPath, 'node_modules', mod);
+            if (fs.existsSync(src)) {
+              fs.cpSync(src, dest, { recursive: true });
+            }
           }
-          const furiSrc = path.resolve(__dirname, 'node_modules/file-uri-to-path');
-          const furiDest = path.join(buildPath, 'node_modules/file-uri-to-path');
-          if (fs.existsSync(furiSrc)) {
-            fs.cpSync(furiSrc, furiDest, { recursive: true });
-          }
+
+          // Rebuild better-sqlite3 for Electron's Node.js version
+          execSync(
+            `npx @electron/rebuild --only better-sqlite3 --version ${electronVersion} --arch ${arch}`,
+            {
+              cwd: buildPath,
+              stdio: 'inherit',
+            }
+          );
+
           callback();
         } catch (err) {
           callback(err as Error);
