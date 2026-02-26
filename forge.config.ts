@@ -5,6 +5,8 @@ import { MakerZIP } from '@electron-forge/maker-zip';
 import { VitePlugin } from '@electron-forge/plugin-vite';
 import { FusesPlugin } from '@electron-forge/plugin-fuses';
 import { FuseV1Options, FuseVersion } from '@electron/fuses';
+import path from 'path';
+import fs from 'fs';
 
 const isSigning = !!process.env.APPLE_IDENTITY;
 
@@ -14,7 +16,7 @@ const config: ForgeConfig = {
     icon: './assets/icons/icon',
     appBundleId: 'io.zaptask.app',
     asar: {
-      unpack: '**/*.{node,dylib,dll}',
+      unpack: '{**/*.node,**/*.dylib,**/*.dll,**/better-sqlite3/**,**/bindings/**,**/file-uri-to-path/**}',
     },
     extraResource: ['./assets/icons'],
     protocols: [
@@ -38,6 +40,30 @@ const config: ForgeConfig = {
         teamId: process.env.APPLE_TEAM_ID!,
       },
     }),
+    afterCopy: [
+      // Copy better-sqlite3 native module into the packaged app so require() works
+      (buildPath: string, _electronVersion: string, _platform: string, _arch: string, callback: (err?: Error) => void) => {
+        const src = path.resolve(__dirname, 'node_modules/better-sqlite3');
+        const dest = path.join(buildPath, 'node_modules/better-sqlite3');
+        try {
+          fs.cpSync(src, dest, { recursive: true });
+          // Also copy bindings dependency
+          const bindingsSrc = path.resolve(__dirname, 'node_modules/bindings');
+          const bindingsDest = path.join(buildPath, 'node_modules/bindings');
+          if (fs.existsSync(bindingsSrc)) {
+            fs.cpSync(bindingsSrc, bindingsDest, { recursive: true });
+          }
+          const furiSrc = path.resolve(__dirname, 'node_modules/file-uri-to-path');
+          const furiDest = path.join(buildPath, 'node_modules/file-uri-to-path');
+          if (fs.existsSync(furiSrc)) {
+            fs.cpSync(furiSrc, furiDest, { recursive: true });
+          }
+          callback();
+        } catch (err) {
+          callback(err as Error);
+        }
+      },
+    ],
   },
   rebuildConfig: {},
   makers: [
