@@ -116,6 +116,14 @@ jobs:
       - name: Build & Make (Windows x64)
         run: npm run make -- --arch=x64
 
+      - name: Rename exe to version-less name
+        shell: bash
+        run: |
+          find out/make/squirrel.windows -name "*.exe" | while read f; do
+            dir=$(dirname "$f")
+            mv "$f" "$dir/ZapTask-Setup.exe"
+          done
+
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
         with:

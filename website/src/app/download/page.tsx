@@ -10,13 +10,27 @@ export const metadata: Metadata = {
 };
 
 const GITHUB_REPO = "MalachiPatrick718/ZapTask";
-const VERSION = "0.1.0";
 
 function getDownloadUrl(fileName: string): string {
   return `https://github.com/${GITHUB_REPO}/releases/latest/download/${encodeURIComponent(fileName)}`;
 }
 
-export default function DownloadPage() {
+async function getLatestVersion(): Promise<string> {
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
+      { next: { revalidate: 300 } } // cache for 5 minutes
+    );
+    if (!res.ok) return "latest";
+    const data = await res.json();
+    return (data.tag_name as string)?.replace(/^v/, "") ?? "latest";
+  } catch {
+    return "latest";
+  }
+}
+
+export default async function DownloadPage() {
+  const version = await getLatestVersion();
   return (
     <div className="gradient-hero">
       <div className="pt-24 pb-20 px-6">
@@ -76,7 +90,7 @@ export default function DownloadPage() {
                   </Link>
                 </div>
                 <p className="text-xs text-gray-400 text-center mt-3">
-                  v{VERSION} &middot; .dmg
+                  v{version} &middot; .dmg
                 </p>
               </div>
             </FadeIn>
@@ -94,13 +108,13 @@ export default function DownloadPage() {
                 <p className="text-xs text-gray-400 mb-6">64-bit</p>
 
                 <Link
-                  href={getDownloadUrl(`ZapTask-${VERSION}-Setup.exe`)}
+                  href={getDownloadUrl("ZapTask-Setup.exe")}
                   className="block w-full py-3 rounded-full font-semibold text-sm text-center transition-colors bg-foreground text-white hover:bg-gray-800"
                 >
                   Download for Windows
                 </Link>
                 <p className="text-xs text-gray-400 text-center mt-3">
-                  v{VERSION} &middot; ZapTask-{VERSION}-Setup.exe
+                  v{version} &middot; ZapTask-Setup.exe
                 </p>
               </div>
             </FadeIn>
