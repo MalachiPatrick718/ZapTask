@@ -1,11 +1,16 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { FadeIn } from "@/components/ui/FadeIn";
 
 export const metadata: Metadata = {
   title: "Download ZapTask",
-  description: "Download ZapTask for macOS and Windows. Free to use, no account required.",
+  description:
+    "Download ZapTask for macOS and Windows. Free to use, no account required.",
 };
+
+const GITHUB_REPO = "MalachiPatrick718/ZapTask";
+const VERSION = "0.1.0";
 
 const platforms = [
   {
@@ -13,7 +18,7 @@ const platforms = [
     icon: "\uD83C\uDF4E",
     version: "macOS 12 (Monterey) or later",
     arch: "Apple Silicon & Intel",
-    file: "ZapTask-0.1.0-mac.dmg",
+    fileName: `ZapTask-${VERSION}-arm64.dmg`,
     primary: true,
   },
   {
@@ -21,10 +26,14 @@ const platforms = [
     icon: "\uD83E\uDE9F",
     version: "Windows 10 or later",
     arch: "64-bit",
-    file: "ZapTask-0.1.0-win-x64.exe",
+    fileName: `ZapTask-${VERSION} Setup.exe`,
     primary: false,
   },
 ];
+
+function getDownloadUrl(fileName: string): string {
+  return `https://github.com/${GITHUB_REPO}/releases/latest/download/${encodeURIComponent(fileName)}`;
+}
 
 export default function DownloadPage() {
   return (
@@ -64,25 +73,42 @@ export default function DownloadPage() {
                   <h2 className="text-xl font-bold text-foreground mb-1">
                     {platform.name}
                   </h2>
-                  <p className="text-sm text-gray-500 mb-1">{platform.version}</p>
+                  <p className="text-sm text-gray-500 mb-1">
+                    {platform.version}
+                  </p>
                   <p className="text-xs text-gray-400 mb-6">{platform.arch}</p>
 
-                  <button
-                    className={`w-full py-3 rounded-full font-semibold text-sm transition-colors ${
+                  <Link
+                    href={getDownloadUrl(platform.fileName)}
+                    className={`block w-full py-3 rounded-full font-semibold text-sm text-center transition-colors ${
                       platform.primary
                         ? "bg-zap text-white hover:bg-zap-dark"
                         : "bg-foreground text-white hover:bg-gray-800"
                     }`}
                   >
                     Download for {platform.name}
-                  </button>
+                  </Link>
                   <p className="text-xs text-gray-400 text-center mt-3">
-                    {platform.file}
+                    v{VERSION} &middot; {platform.fileName}
                   </p>
                 </div>
               </FadeIn>
             ))}
           </div>
+
+          {/* All releases link */}
+          <FadeIn>
+            <p className="text-center text-sm text-gray-500 mb-16">
+              Looking for an older version or different architecture?{" "}
+              <Link
+                href={`https://github.com/${GITHUB_REPO}/releases`}
+                className="text-zap hover:underline"
+                target="_blank"
+              >
+                View all releases
+              </Link>
+            </p>
+          </FadeIn>
 
           {/* What's included */}
           <FadeIn>
@@ -93,7 +119,9 @@ export default function DownloadPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
                 <div>
                   <div className="text-2xl mb-2">{"\uD83C\uDD93"}</div>
-                  <p className="text-sm font-medium text-foreground">Free forever</p>
+                  <p className="text-sm font-medium text-foreground">
+                    Free forever
+                  </p>
                   <p className="text-xs text-gray-500">
                     Core features always free
                   </p>
