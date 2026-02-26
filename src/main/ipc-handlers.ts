@@ -1,7 +1,12 @@
-import { ipcMain, shell, app, BrowserWindow, Notification } from 'electron';
+import { ipcMain, shell, app, BrowserWindow, Notification, clipboard, nativeImage } from 'electron';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
 import { IPC } from '../shared/types/ipc-channels';
 import { syncEngine } from './services/sync-engine';
 import { getTaskRepository } from './database';
+import { expandToSettings, collapseToWidget } from './window-manager';
+import { getCredentials, setCredentials, clearCredentials } from './credential-store';
 import type { Task, TaskSource } from '../shared/types';
 
 export function registerIpcHandlers(): void {
@@ -18,6 +23,16 @@ export function registerIpcHandlers(): void {
     BrowserWindow.fromWebContents(event.sender)?.setAlwaysOnTop(flag);
   });
 
+  ipcMain.handle(IPC.WINDOW_EXPAND_SETTINGS, async () => {
+    expandToSettings();
+    return { success: true };
+  });
+
+  ipcMain.handle(IPC.WINDOW_COLLAPSE_WIDGET, async () => {
+    collapseToWidget();
+    return { success: true };
+  });
+
   // Shell
   ipcMain.on(IPC.SHELL_OPEN_URL, (_event, url: string) => {
     if (typeof url === 'string' && (url.startsWith('https://') || url.startsWith('http://'))) {
@@ -25,10 +40,16 @@ export function registerIpcHandlers(): void {
     }
   });
 
-  // OAuth — stub
+  // OAuth — direct OAuth 2.0 with PKCE
   ipcMain.handle(IPC.OAUTH_START, async (_event, params: { toolId: string }) => {
-    console.log(`[OAuth] Start flow for: ${params.toolId}`);
-    // TODO: Open OAuth URL in system browser for real OAuth flow
+    try {
+      const { startOAuthFlow } = await import('./auth/oauth-manager');
+      const { state } = startOAuthFlow(params.toolId);
+      return { success: true, state };
+    } catch (err) {
+      console.error(`[OAuth] Failed to start flow for ${params.toolId}:`, err);
+      return { success: false, error: err instanceof Error ? err.message : String(err) };
+    }
   });
 
   // Sync
@@ -39,18 +60,31 @@ export function registerIpcHandlers(): void {
     return syncEngine.syncAll();
   });
 
-  // Store — stubs (credential storage)
-  // TODO: Implement with electron-store when real OAuth credentials are available
-  ipcMain.handle(IPC.STORE_GET_CREDENTIALS, async (_event, _toolId: string) => {
-    return null;
+  // Store — credential storage (Nango connectionIds)
+  ipcMain.handle(IPC.STORE_GET_CREDENTIALS, async (_event, toolId: string) => {
+    try {
+      return { success: true, data: getCredentials(toolId) };
+    } catch (err) {
+      return { success: false, error: String(err) };
+    }
   });
 
-  ipcMain.handle(IPC.STORE_SET_CREDENTIALS, async (_event, _toolId: string, _creds: any) => {
-    // stub
+  ipcMain.handle(IPC.STORE_SET_CREDENTIALS, async (_event, toolId: string, creds: any) => {
+    try {
+      setCredentials(toolId, creds);
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: String(err) };
+    }
   });
 
-  ipcMain.handle(IPC.STORE_CLEAR_CREDENTIALS, async (_event, _toolId: string) => {
-    // stub
+  ipcMain.handle(IPC.STORE_CLEAR_CREDENTIALS, async (_event, toolId: string) => {
+    try {
+      clearCredentials(toolId);
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: String(err) };
+    }
   });
 
   // Notifications
@@ -133,4 +167,60 @@ export function registerIpcHandlers(): void {
       return { success: false, error: String(err) };
     }
   });
+
+  // Paddle config
+  ipcMain.handle(IPC.PADDLE_GET_CONFIG, async () => {
+    return {
+      clientToken: process.env.PADDLE_CLIENT_TOKEN || '',
+      priceIdMonthly: process.env.PADDLE_PRICE_ID_MONTHLY || '',
+      priceIdYearly: process.env.PADDLE_PRICE_ID_YEARLY || '',
+    };
+  });
+
+  // Feedback — capture screenshot
+  ipcMain.handle(IPC.FEEDBACK_CAPTURE_SCREENSHOT, async (event) => {
+    try {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      if (!win) return { success: false, error: 'No window found' };
+      const image = await win.webContents.capturePage();
+      return { success: true, data: image.toDataURL() };
+    } catch (err) {
+      console.error('[IPC] feedback:captureScreenshot error:', err);
+      return { success: false, error: String(err) };
+    }
+  });
+
+  // Feedback — send via mailto + clipboard screenshot
+  ipcMain.handle(IPC.FEEDBACK_SEND, async (_event, data: {
+    category: string;
+    subject: string;
+    message: string;
+    screenshotDataUrl?: string;
+  }) => {
+    try {
+      const feedbackEmail = process.env.FEEDBACK_EMAIL || 'support@zaptask.app';
+      const subjectLine = `[${data.category}] ${data.subject}`;
+      const body = data.message
+        + (data.screenshotDataUrl
+          ? '\n\n---\n[Screenshot copied to clipboard — please paste it here]'
+          : '');
+
+      const mailto = `mailto:${feedbackEmail}?subject=${encodeURIComponent(subjectLine)}&body=${encodeURIComponent(body)}`;
+      await shell.openExternal(mailto);
+
+      if (data.screenshotDataUrl) {
+        const img = nativeImage.createFromDataURL(data.screenshotDataUrl);
+        clipboard.writeImage(img);
+        const tempPath = path.join(os.tmpdir(), `zaptask-screenshot-${Date.now()}.png`);
+        fs.writeFileSync(tempPath, img.toPNG());
+        console.log('[Feedback] Screenshot saved to', tempPath);
+      }
+
+      return { success: true };
+    } catch (err) {
+      console.error('[IPC] feedback:send error:', err);
+      return { success: false, error: String(err) };
+    }
+  });
+
 }

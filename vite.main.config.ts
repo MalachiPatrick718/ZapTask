@@ -9,7 +9,7 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      external: ['electron-store', 'better-sqlite3'],
+      external: ['electron-store', 'better-sqlite3', 'dotenv'],
     },
   },
 });

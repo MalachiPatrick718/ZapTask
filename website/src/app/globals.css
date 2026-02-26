@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: #ffffff;
+  --color-foreground: #171717;
+  --color-zap: #FF6B35;
+  --color-zap-light: #FF8F66;
+  --color-zap-dark: #E05520;
+  --color-zap-bg: #FFF5F0;
+  --color-surface: #F8F9FA;
+  --color-border: #E5E7EB;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+}

@@ -2,15 +2,18 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type {
   Task,
+  TaskSource,
   EnergyProfile,
   EnergyLevel,
   TimeBlock,
   UserProfile,
+  Subscription,
 } from '../../shared/types';
 import { DEFAULT_ENERGY_PROFILE } from '../../shared/types';
 
 // === View & Panel types ===
-export type ActiveView = 'tasks' | 'suggested' | 'day' | 'settings';
+export type ActiveView = 'tasks' | 'suggested' | 'day';
+export type WindowMode = 'widget' | 'settings';
 export type ActivePanel = null | 'taskDetail' | 'addTask' | 'energyCheckin';
 
 export interface ToastItem {
@@ -21,7 +24,7 @@ export interface ToastItem {
 
 // === Tool sync state (UI only — credentials stored via IPC) ===
 export interface ToolState {
-  toolId: 'jira' | 'notion' | 'gcal';
+  toolId: Exclude<TaskSource, 'local'>;
   connected: boolean;
   email: string;
   lastSyncAt: string | null;
@@ -31,9 +34,29 @@ export interface ToolState {
 
 const DEFAULT_TOOLS: ToolState[] = [
   { toolId: 'jira', connected: false, email: '', lastSyncAt: null, syncStatus: 'idle', syncError: null },
+  { toolId: 'asana', connected: false, email: '', lastSyncAt: null, syncStatus: 'idle', syncError: null },
   { toolId: 'notion', connected: false, email: '', lastSyncAt: null, syncStatus: 'idle', syncError: null },
+  { toolId: 'monday', connected: false, email: '', lastSyncAt: null, syncStatus: 'idle', syncError: null },
   { toolId: 'gcal', connected: false, email: '', lastSyncAt: null, syncStatus: 'idle', syncError: null },
+  { toolId: 'outlook', connected: false, email: '', lastSyncAt: null, syncStatus: 'idle', syncError: null },
+  { toolId: 'apple_cal', connected: false, email: '', lastSyncAt: null, syncStatus: 'idle', syncError: null },
 ];
+
+// === Subscription defaults ===
+function createDefaultSubscription(): Subscription {
+  const now = new Date();
+  const trialEnd = new Date(now);
+  trialEnd.setDate(trialEnd.getDate() + 14);
+  return {
+    tier: 'trial',
+    status: 'active',
+    trialStartedAt: now.toISOString(),
+    trialEndsAt: trialEnd.toISOString(),
+    paddleSubscriptionId: null,
+    paddleCustomerId: null,
+    currentPeriodEnd: null,
+  };
+}
 
 // === Pomodoro ===
 const FOCUS_SECONDS = 25 * 60;
@@ -84,8 +107,12 @@ interface ZapStore {
   // Theme
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
+  accentColor: string;
+  setAccentColor: (color: string) => void;
 
   // UI
+  windowMode: WindowMode;
+  setWindowMode: (mode: WindowMode) => void;
   activeView: ActiveView;
   setActiveView: (view: ActiveView) => void;
   activePanel: ActivePanel;
@@ -112,6 +139,10 @@ interface ZapStore {
   stopPomodoro: () => void;
   tickPomodoro: () => void;
   completePomodoroPhase: () => void;
+
+  // Subscription
+  subscription: Subscription;
+  setSubscription: (sub: Partial<Subscription>) => void;
 }
 
 export const useStore = create<ZapStore>()(
@@ -176,8 +207,12 @@ export const useStore = create<ZapStore>()(
       // Theme
       theme: 'dark',
       setTheme: (theme) => set({ theme }),
+      accentColor: '#F06D3D',
+      setAccentColor: (color) => set({ accentColor: color }),
 
       // UI
+      windowMode: 'widget',
+      setWindowMode: (mode) => set({ windowMode: mode }),
       activeView: 'tasks',
       setActiveView: (view) => set({ activeView: view }),
       activePanel: null,
@@ -255,6 +290,11 @@ export const useStore = create<ZapStore>()(
           },
         };
       }),
+      // Subscription
+      subscription: createDefaultSubscription(),
+      setSubscription: (sub) => set((s) => ({
+        subscription: { ...s.subscription, ...sub },
+      })),
     }),
     {
       name: 'zaptask-store',
@@ -264,7 +304,9 @@ export const useStore = create<ZapStore>()(
         energyProfile: state.energyProfile,
         tools: state.tools,
         theme: state.theme,
+        accentColor: state.accentColor,
         notificationsEnabled: state.notificationsEnabled,
+        subscription: state.subscription,
       }),
       merge: (persisted, current) => {
         const p = persisted as Partial<ZapStore> | undefined;
@@ -274,9 +316,22 @@ export const useStore = create<ZapStore>()(
           user: p?.user ?? current.user,
           onboardingComplete: p?.onboardingComplete ?? current.onboardingComplete,
           theme: p?.theme === 'light' || p?.theme === 'dark' ? p.theme : current.theme,
+          accentColor: typeof p?.accentColor === 'string' && p.accentColor.startsWith('#') ? p.accentColor : current.accentColor,
           energyProfile: p?.energyProfile?.blocks ? p.energyProfile : current.energyProfile,
-          tools: Array.isArray(p?.tools) && p.tools.length > 0 ? p.tools : current.tools,
+          tools: (() => {
+            if (!Array.isArray(p?.tools)) return current.tools;
+            const pTools = p.tools as ToolState[];
+            // Merge: keep persisted state for known tools, add any new defaults
+            if (pTools.length < current.tools.length) {
+              return current.tools.map((def) => {
+                const existing = pTools.find((t) => t.toolId === def.toolId);
+                return existing || def;
+              });
+            }
+            return pTools;
+          })(),
           notificationsEnabled: typeof p?.notificationsEnabled === 'boolean' ? p.notificationsEnabled : current.notificationsEnabled,
+          subscription: p?.subscription?.tier ? p.subscription as Subscription : current.subscription,
         };
       },
     },

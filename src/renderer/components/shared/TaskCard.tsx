@@ -2,6 +2,9 @@ import { useState, type CSSProperties } from 'react';
 import { differenceInCalendarDays, format, parseISO } from 'date-fns';
 import { StatusBadge } from './StatusBadge';
 import { SchedulePickerModal } from './SchedulePickerModal';
+import { PomodoroModal } from './PomodoroModal';
+import { ProBadge } from './UpgradePrompt';
+import { useSubscription } from '../../hooks/useSubscription';
 import type { Task } from '../../../shared/types';
 
 interface TaskCardProps {
@@ -12,31 +15,27 @@ interface TaskCardProps {
   onStartPomodoro?: () => void;
 }
 
-const priorityColors: Record<string, string> = {
-  urgent: 'var(--red)',
-  high: 'var(--yellow)',
-  medium: 'var(--teal)',
-  low: 'var(--text3)',
+const priorityConfig: Record<string, { label: string; color: string; bg: string }> = {
+  urgent: { label: 'Urgent', color: 'var(--red)', bg: 'rgba(255, 69, 58, 0.12)' },
+  high: { label: 'High', color: 'var(--yellow)', bg: 'rgba(255, 214, 10, 0.12)' },
+  medium: { label: 'Medium', color: 'var(--teal)', bg: 'rgba(78, 205, 196, 0.12)' },
+  low: { label: 'Low', color: 'var(--text3)', bg: 'rgba(150, 150, 150, 0.1)' },
 };
 
-const energyIcons: Record<string, { icon: string; color: string }> = {
-  high: { icon: '\u26A1', color: 'var(--energy-high)' },
-  medium: { icon: '\uD83D\uDD0B', color: 'var(--energy-med)' },
-  low: { icon: '\uD83C\uDF19', color: 'var(--energy-low)' },
+const energyConfig: Record<string, { label: string; icon: string; color: string; bg: string }> = {
+  high: { label: 'High Energy', icon: '\u26A1', color: 'var(--energy-high)', bg: 'rgba(255, 149, 0, 0.12)' },
+  medium: { label: 'Med Energy', icon: '\uD83D\uDD0B', color: 'var(--energy-med)', bg: 'rgba(78, 205, 196, 0.12)' },
+  low: { label: 'Low Energy', icon: '\uD83C\uDF19', color: 'var(--energy-low)', bg: 'rgba(120, 120, 255, 0.12)' },
 };
 
 const sourceLabels: Record<string, { label: string; color: string }> = {
   jira: { label: 'Jira', color: '#2684FF' },
+  asana: { label: 'Asana', color: '#F06A6A' },
   notion: { label: 'Notion', color: '#999' },
   gcal: { label: 'Calendar', color: '#4285F4' },
+  outlook: { label: 'Outlook', color: '#0078D4' },
+  apple_cal: { label: 'Apple Cal', color: '#FF3B30' },
   local: { label: 'Local', color: 'var(--text3)' },
-};
-
-const priorityEmojis: Record<string, string> = {
-  urgent: '🔥',
-  high: '⬆️',
-  medium: '⏱️',
-  low: '💤',
 };
 
 function isOverdue(dueDate: string | null): boolean {
@@ -50,7 +49,6 @@ function formatDueDate(dueDate: string): string {
   try {
     const date = parseISO(dueDate);
     const diff = differenceInCalendarDays(date, new Date());
-
     if (diff < 0) return `${Math.abs(diff)}d overdue`;
     if (diff === 0) return 'Today';
     if (diff === 1) return 'Tomorrow';
@@ -60,13 +58,39 @@ function formatDueDate(dueDate: string): string {
   }
 }
 
+function formatDuration(minutes: number): string {
+  if (minutes >= 60) {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  }
+  return `${minutes}m`;
+}
+
+const pillStyle = (color: string, bg: string): CSSProperties => ({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 4,
+  padding: '2px 8px',
+  borderRadius: 10,
+  fontSize: 11,
+  fontWeight: 500,
+  fontFamily: 'var(--font-mono)',
+  color,
+  background: bg,
+  whiteSpace: 'nowrap',
+});
+
 export function TaskCard({ task, onClick, onStatusChange, onAddToDay, onStartPomodoro }: TaskCardProps) {
+  const { canUsePomodoro } = useSubscription();
   const [hovered, setHovered] = useState(false);
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
+  const [showPomodoro, setShowPomodoro] = useState(false);
   const overdue = isOverdue(task.dueDate);
   const accentColor = task.category === 'work' ? 'var(--accent)' : 'var(--red)';
-  const energy = task.energyRequired ? energyIcons[task.energyRequired] : null;
   const source = sourceLabels[task.source] || sourceLabels.local;
+  const energy = task.energyRequired ? energyConfig[task.energyRequired] : null;
+  const priority = task.priority ? priorityConfig[task.priority] : null;
 
   const cardStyle: CSSProperties = {
     display: 'flex',
@@ -90,44 +114,36 @@ export function TaskCard({ task, onClick, onStatusChange, onAddToDay, onStartPom
       <div style={{ width: 3, background: accentColor, flexShrink: 0 }} />
 
       <div style={{ flex: 1, padding: '10px 12px', minWidth: 0 }}>
-        {/* Row 1: Status + Priority + Source */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-          <StatusBadge
-            status={task.status}
-            onClick={onStatusChange ? (next) => onStatusChange(task.id, next) : undefined}
-          />
-          {task.priority && (
-            <span style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 3,
-              fontSize: 11,
-              color: priorityColors[task.priority] || 'var(--text3)',
-            }}>
-              <span>{priorityEmojis[task.priority] || '⭐'}</span>
-              <span style={{
-                width: 6, height: 6, borderRadius: '50%',
-                background: priorityColors[task.priority] || 'var(--text3)',
-              }}
-              />
-            </span>
-          )}
-          <span style={{
-            display: 'flex', alignItems: 'center', gap: 4,
-            fontSize: 11, fontFamily: 'var(--font-mono)',
-            color: source.color, marginLeft: 'auto',
+        {/* Row 1: Title + Source + Status */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <div style={{
+            flex: 1, minWidth: 0,
+            fontSize: 13, fontWeight: 600, color: 'var(--text1)',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
+            {task.title}
+          </div>
+
+          {/* Source */}
+          <span
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 3,
+              fontSize: 10, fontFamily: 'var(--font-mono)', fontWeight: 500,
+              color: source.color, flexShrink: 0,
+            }}
+          >
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: source.color,
+            }} />
             {source.label}
             {task.sourceUrl && (
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.zaptask.openUrl(task.sourceUrl!);
-                }}
+                onClick={(e) => { e.stopPropagation(); window.zaptask.openUrl(task.sourceUrl!); }}
                 title={`Open in ${source.label}`}
                 style={{
                   background: 'none', border: 'none', cursor: 'pointer',
-                  color: source.color, fontSize: 12, padding: 0,
+                  color: source.color, fontSize: 11, padding: 0,
                   display: 'inline-flex', alignItems: 'center',
                 }}
               >
@@ -135,82 +151,102 @@ export function TaskCard({ task, onClick, onStatusChange, onAddToDay, onStartPom
               </button>
             )}
           </span>
+
+          {/* Status */}
+          <StatusBadge
+            status={task.status}
+            onClick={onStatusChange ? (next) => onStatusChange(task.id, next) : undefined}
+          />
         </div>
 
-        {/* Row 2: Title */}
+        {/* Row 2: Pills + Due Date */}
         <div style={{
-          fontSize: 13, fontWeight: 500, color: 'var(--text1)',
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          marginBottom: 4,
+          display: 'flex', alignItems: 'center', gap: 6,
+          flexWrap: 'wrap', marginBottom: (task.status !== 'done' && (onAddToDay || onStartPomodoro)) ? 6 : 0,
         }}>
-          {task.title}
-        </div>
+          {energy && (
+            <span style={pillStyle(energy.color, energy.bg)}>
+              {energy.icon} {energy.label}
+            </span>
+          )}
 
-        {/* Row 3: Energy + Time + Due date */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text3)' }}>
-          {energy ? (
-            <span style={{ color: energy.color }}>{energy.icon}</span>
-          ) : (
-            <span style={{
-              color: 'var(--yellow)', fontSize: 12, fontFamily: 'var(--font-mono)',
-            }}>
-              {'\u26A1'} Set energy
-            </span>
-          )}
           {task.estimatedMinutes && (
-            <span style={{ fontFamily: 'var(--font-mono)' }}>
-              {task.estimatedMinutes >= 60
-                ? `${Math.floor(task.estimatedMinutes / 60)}h ${task.estimatedMinutes % 60}m`
-                : `${task.estimatedMinutes}m`}
+            <span style={pillStyle('var(--text2)', 'rgba(150, 150, 150, 0.1)')}>
+              {'\u23F1'} {formatDuration(task.estimatedMinutes)}
             </span>
           )}
+
+          {priority && (
+            <span style={pillStyle(priority.color, priority.bg)}>
+              {priority.label}
+            </span>
+          )}
+
           {task.dueDate && (
             <span style={{
               marginLeft: 'auto',
-              color: overdue ? 'var(--red)' : 'var(--text3)',
+              fontSize: 11,
               fontFamily: 'var(--font-mono)',
               fontWeight: overdue ? 600 : 400,
+              color: overdue ? 'var(--red)' : 'var(--text3)',
+              flexShrink: 0,
             }}>
-              {formatDueDate(task.dueDate)}
+              {overdue ? '\u26A0 ' : ''}{formatDueDate(task.dueDate)}
             </span>
           )}
         </div>
 
-        {/* Actions row */}
+        {/* Row 3: Actions — Pin to Today + Pomodoro */}
         {task.status !== 'done' && (onAddToDay || onStartPomodoro) && (
-          <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
-            {onAddToDay && (
+          <div style={{
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between',
+            paddingTop: 4,
+            borderTop: '1px solid var(--border)',
+          }}>
+            {onAddToDay ? (
               <button
                 onClick={(e) => { e.stopPropagation(); setShowSchedulePicker(true); }}
                 style={{
-                  padding: '4px 0',
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--accent)',
-                  fontSize: 12,
-                  fontFamily: 'var(--font-mono)',
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  padding: '3px 0',
+                  background: 'none', border: 'none',
+                  color: 'var(--accent)', fontSize: 11,
+                  fontFamily: 'var(--font-mono)', fontWeight: 500,
                   cursor: 'pointer',
-                  textAlign: 'left',
                 }}
               >
-                + Add to Today's Work
+                {'\uD83D\uDCCC'} Add to Today
               </button>
-            )}
+            ) : <span />}
+
             {onStartPomodoro && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onStartPomodoro(); }}
-                style={{
-                  padding: '4px 0',
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--red)',
-                  fontSize: 12,
-                  fontFamily: 'var(--font-mono)',
-                  cursor: 'pointer',
-                }}
-              >
-                {'\uD83C\uDF45'} Pomodoro
-              </button>
+              canUsePomodoro() ? (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowPomodoro(true); }}
+                  title="Start Pomodoro"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 3,
+                    padding: '3px 6px',
+                    background: 'none', border: 'none',
+                    color: 'var(--red)', fontSize: 13,
+                    cursor: 'pointer',
+                    borderRadius: 'var(--radius-sm)',
+                    transition: 'background 100ms ease',
+                  }}
+                  onMouseEnter={(e) => { (e.target as HTMLElement).style.background = 'rgba(255,69,58,0.1)'; }}
+                  onMouseLeave={(e) => { (e.target as HTMLElement).style.background = 'none'; }}
+                >
+                  {'\uD83C\uDF45'}
+                </button>
+              ) : (
+                <span style={{
+                  fontSize: 11, fontFamily: 'var(--font-mono)',
+                  color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 4,
+                }}>
+                  {'\uD83C\uDF45'} <ProBadge />
+                </span>
+              )
             )}
           </div>
         )}
@@ -220,6 +256,17 @@ export function TaskCard({ task, onClick, onStatusChange, onAddToDay, onStartPom
         <SchedulePickerModal
           task={task}
           onClose={() => setShowSchedulePicker(false)}
+        />
+      )}
+
+      {showPomodoro && (
+        <PomodoroModal
+          task={task}
+          onClose={() => setShowPomodoro(false)}
+          onStart={() => {
+            setShowPomodoro(false);
+            onStartPomodoro?.();
+          }}
         />
       )}
     </div>

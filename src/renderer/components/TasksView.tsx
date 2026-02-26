@@ -1,8 +1,8 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useStore } from '../store';
 import { TaskCard } from './shared/TaskCard';
 import { scheduleTaskIntoDay } from '../services/scheduler';
-import type { Task } from '../../shared/types';
+import type { Task, TaskSource } from '../../shared/types';
 
 function to12h(time: string): string {
   const [h, m] = time.split(':').map(Number);
@@ -13,6 +13,13 @@ function to12h(time: string): string {
 
 type CategoryFilter = 'all' | 'work' | 'personal';
 type StatusFilter = 'all' | 'todo' | 'in_progress' | 'done';
+type SourceFilter = 'all' | TaskSource;
+
+const SOURCE_LABELS: Record<string, string> = {
+  jira: 'Jira', asana: 'Asana', notion: 'Notion',
+  gcal: 'GCal', outlook: 'Outlook', apple_cal: 'Apple',
+  local: 'Local',
+};
 
 export function TasksView() {
   const tasks = useStore((s) => s.tasks);
@@ -26,9 +33,21 @@ export function TasksView() {
   const addToast = useStore((s) => s.addToast);
   const setActiveView = useStore((s) => s.setActiveView);
   const startPomodoro = useStore((s) => s.startPomodoro);
+  const searchRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<CategoryFilter>('all');
   const [status, setStatus] = useState<StatusFilter>('all');
+  const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
+
+  // Listen for Cmd+F focus event from App.tsx
+  useEffect(() => {
+    const handleFocus = () => {
+      searchRef.current?.focus();
+      searchRef.current?.select();
+    };
+    window.addEventListener('zaptask:focusSearch', handleFocus);
+    return () => window.removeEventListener('zaptask:focusSearch', handleFocus);
+  }, []);
 
   const uncategorizedCount = tasks.filter((t) => t.energyRequired === null && t.status !== 'done').length;
 
@@ -36,6 +55,7 @@ export function TasksView() {
     let result = tasks;
     if (category !== 'all') result = result.filter((t) => t.category === category);
     if (status !== 'all') result = result.filter((t) => t.status === status);
+    if (sourceFilter !== 'all') result = result.filter((t) => t.source === sourceFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter((t) =>
@@ -44,10 +64,19 @@ export function TasksView() {
       );
     }
     return result;
-  }, [tasks, category, status, search]);
+  }, [tasks, category, status, sourceFilter, search]);
 
   const workCount = tasks.filter((t) => t.category === 'work').length;
   const personalCount = tasks.filter((t) => t.category === 'personal').length;
+
+  const sourceCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const t of tasks) {
+      counts[t.source] = (counts[t.source] || 0) + 1;
+    }
+    return counts;
+  }, [tasks]);
+  const activeSources = Object.keys(sourceCounts);
 
   const handleAddToDay = useCallback((task: Task) => {
     const block = scheduleTaskIntoDay(task, new Date(), energyProfile, schedule, override);
@@ -83,6 +112,7 @@ export function TasksView() {
       {/* Search + Add */}
       <div style={{ display: 'flex', gap: 8, padding: '12px 14px 8px' }}>
         <input
+          ref={searchRef}
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -161,6 +191,45 @@ export function TasksView() {
           </button>
         ))}
       </div>
+
+      {/* Source filter chips (only when 2+ sources) */}
+      {activeSources.length > 1 && (
+        <div style={{ display: 'flex', gap: 4, padding: '4px 14px 8px', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setSourceFilter('all')}
+            style={{
+              padding: '3px 8px',
+              borderRadius: 'var(--radius-sm)',
+              background: sourceFilter === 'all' ? 'var(--surface-high)' : 'transparent',
+              color: sourceFilter === 'all' ? 'var(--text1)' : 'var(--text3)',
+              fontSize: 12,
+              fontFamily: 'var(--font-mono)',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            All Sources
+          </button>
+          {activeSources.map((src) => (
+            <button
+              key={src}
+              onClick={() => setSourceFilter(src as SourceFilter)}
+              style={{
+                padding: '3px 8px',
+                borderRadius: 'var(--radius-sm)',
+                background: sourceFilter === src ? 'var(--surface-high)' : 'transparent',
+                color: sourceFilter === src ? 'var(--text1)' : 'var(--text3)',
+                fontSize: 12,
+                fontFamily: 'var(--font-mono)',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              {SOURCE_LABELS[src] || src} <span style={{ opacity: 0.7 }}>{sourceCounts[src]}</span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Uncategorized energy banner */}
       {uncategorizedCount > 0 && (

@@ -3,6 +3,8 @@ export const IPC = {
   WINDOW_MINIMIZE: 'window:minimize',
   WINDOW_HIDE: 'window:hide',
   WINDOW_ALWAYS_ON_TOP: 'window:alwaysOnTop',
+  WINDOW_EXPAND_SETTINGS: 'window:expandSettings',
+  WINDOW_COLLAPSE_WIDGET: 'window:collapseWidget',
 
   // Shell
   SHELL_OPEN_URL: 'shell:openUrl',
@@ -35,4 +37,12 @@ export const IPC = {
 
   // Navigation
   NAVIGATE_TO_TASK: 'navigate:toTask',
+
+  // Paddle / Billing
+  PADDLE_GET_CONFIG: 'paddle:getConfig',
+
+  // Feedback
+  FEEDBACK_CAPTURE_SCREENSHOT: 'feedback:captureScreenshot',
+  FEEDBACK_SEND: 'feedback:send',
+
 } as const;

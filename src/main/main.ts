@@ -1,4 +1,5 @@
-import { app, BrowserWindow, nativeImage } from 'electron';
+import 'dotenv/config';
+import { app, BrowserWindow, nativeImage, globalShortcut } from 'electron';
 
 // Crash handlers — log but don't crash the app
 process.on('unhandledRejection', (reason) => {
@@ -67,6 +68,11 @@ app.whenReady().then(() => {
   setupTray();
   notificationScheduler.start();
 
+  // Global keyboard shortcuts
+  globalShortcut.register('CommandOrControl+H', () => {
+    toggleVisibility();
+  });
+
   // Start sync engine (stubs for now — will sync connected tools)
   // syncEngine.setConnectedTools(['jira', 'notion', 'gcal']);
   // syncEngine.start();
@@ -82,6 +88,7 @@ app.whenReady().then(() => {
 });
 
 app.on('before-quit', () => {
+  globalShortcut.unregisterAll();
   notificationScheduler.stop();
   closeDb();
 });
@@ -98,17 +105,47 @@ app.on('open-url', (_event, url) => {
   handleDeepLink(url);
 });
 
-function handleDeepLink(url: string) {
+async function handleDeepLink(url: string) {
   try {
     const parsed = new URL(url);
 
-    // OAuth callback: zaptask://oauth/callback?provider=...&code=...
+    // OAuth callback: zaptask://oauth/callback?code=...&state=...
     if (parsed.pathname === '/oauth/callback' || parsed.pathname === '//oauth/callback') {
-      const toolId = parsed.searchParams.get('provider') || parsed.searchParams.get('toolId') || '';
       const code = parsed.searchParams.get('code') || '';
+      const state = parsed.searchParams.get('state') || '';
+      const error = parsed.searchParams.get('error') || '';
       const win = getMainWindow();
+
+      if (error) {
+        if (win) {
+          win.webContents.send(IPC.OAUTH_CALLBACK, {
+            success: false,
+            toolId: '',
+            error: parsed.searchParams.get('error_description') || error,
+          });
+        }
+        return;
+      }
+
+      if (!code || !state) {
+        if (win) {
+          win.webContents.send(IPC.OAUTH_CALLBACK, {
+            success: false,
+            toolId: '',
+            error: 'Missing code or state in OAuth callback',
+          });
+        }
+        return;
+      }
+
+      // Exchange authorization code for tokens in main process
+      const { handleOAuthCallback } = await import('./auth/oauth-manager');
+      const result = await handleOAuthCallback(code, state);
+
       if (win) {
-        win.webContents.send('oauth:callback', { toolId, code });
+        win.show();
+        win.focus();
+        win.webContents.send(IPC.OAUTH_CALLBACK, result);
       }
       return;
     }
@@ -124,7 +161,7 @@ function handleDeepLink(url: string) {
         win.webContents.send(IPC.NAVIGATE_TO_TASK, taskId);
       }
     }
-  } catch {
-    // ignore malformed URLs
+  } catch (err) {
+    console.error('[DeepLink] Error handling URL:', err);
   }
 }

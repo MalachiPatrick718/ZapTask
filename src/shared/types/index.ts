@@ -1,5 +1,5 @@
 // === Source integrations ===
-export type TaskSource = 'jira' | 'notion' | 'gcal' | 'local';
+export type TaskSource = 'jira' | 'asana' | 'notion' | 'monday' | 'gcal' | 'outlook' | 'apple_cal' | 'local';
 
 // === Energy levels (3 levels per brief) ===
 export type EnergyLevel = 'high' | 'medium' | 'low';
@@ -81,3 +81,31 @@ export interface UserProfile {
   name: string;
   email: string;
 }
+
+// === Subscription ===
+export type SubscriptionTier = 'trial' | 'free' | 'pro';
+export type SubscriptionStatus = 'active' | 'expired' | 'canceled';
+
+export interface Subscription {
+  tier: SubscriptionTier;
+  status: SubscriptionStatus;
+  trialStartedAt: string;          // ISO date
+  trialEndsAt: string;             // ISO date (trialStartedAt + 14 days)
+  paddleSubscriptionId: string | null;
+  paddleCustomerId: string | null;
+  currentPeriodEnd: string | null;  // ISO date
+}
+
+export const FREE_LIMITS = {
+  maxTasks: 10,
+  maxIntegrations: 1,
+  pomodoroEnabled: false,
+  daySummaryEnabled: false,
+} as const;
+
+export const PRO_LIMITS = {
+  maxTasks: Infinity,
+  maxIntegrations: 6,
+  pomodoroEnabled: true,
+  daySummaryEnabled: true,
+} as const;

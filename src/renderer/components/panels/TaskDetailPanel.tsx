@@ -3,6 +3,8 @@ import { useStore } from '../../store';
 import { Btn } from '../shared/Btn';
 import { StatusBadge } from '../shared/StatusBadge';
 import { CalendarModal } from '../shared/CalendarModal';
+import { ProBadge } from '../shared/UpgradePrompt';
+import { useSubscription } from '../../hooks/useSubscription';
 import type { EnergyLevel, Task, TaskNote } from '../../../shared/types';
 import { format } from 'date-fns';
 import { scheduleTaskIntoDay } from '../../services/scheduler';
@@ -29,8 +31,11 @@ const priorityOptions: { value: Task['priority']; label: string; icon: string }[
 
 const sourceLabels: Record<string, string> = {
   jira: 'Jira',
+  asana: 'Asana',
   notion: 'Notion',
   gcal: 'Google Calendar',
+  outlook: 'Outlook Calendar',
+  apple_cal: 'Apple Calendar',
   local: 'Local',
 };
 
@@ -75,6 +80,7 @@ export function TaskDetailPanel() {
   const pomodoroSession = useStore((s) => s.pomodoroSession);
   const startPomodoro = useStore((s) => s.startPomodoro);
   const stopPomodoro = useStore((s) => s.stopPomodoro);
+  const { canUsePomodoro } = useSubscription();
 
   const task = useMemo(() => tasks.find((t) => t.id === selectedTaskId), [tasks, selectedTaskId]);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -571,7 +577,11 @@ export function TaskDetailPanel() {
             <Btn variant="ghost" onClick={() => setConfirmDelete(true)} size="sm" style={{ color: 'var(--red)' }}>Delete</Btn>
             <div style={{ flex: 1 }} />
             {task.status !== 'done' && (
-              pomodoroSession?.taskId === task.id ? (
+              !canUsePomodoro() ? (
+                <span style={{ fontSize: 12, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  {'\uD83C\uDF45'} <ProBadge />
+                </span>
+              ) : pomodoroSession?.taskId === task.id ? (
                 <Btn variant="secondary" size="sm" onClick={stopPomodoro}>
                   {'\u23F9'} Stop Pomodoro
                 </Btn>

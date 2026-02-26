@@ -6,14 +6,16 @@ const api = {
   minimize: () => ipcRenderer.send(IPC.WINDOW_MINIMIZE),
   hide: () => ipcRenderer.send(IPC.WINDOW_HIDE),
   setAlwaysOnTop: (v: boolean) => ipcRenderer.send(IPC.WINDOW_ALWAYS_ON_TOP, v),
+  expandToSettings: () => ipcRenderer.invoke(IPC.WINDOW_EXPAND_SETTINGS),
+  collapseToWidget: () => ipcRenderer.invoke(IPC.WINDOW_COLLAPSE_WIDGET),
 
   // Shell
   openUrl: (url: string) => ipcRenderer.send(IPC.SHELL_OPEN_URL, url),
 
   // OAuth
   startOAuth: (params: { toolId: string }) => ipcRenderer.invoke(IPC.OAUTH_START, params),
-  onOAuthCallback: (cb: (data: { toolId: string; code: string }) => void) => {
-    const handler = (_e: Electron.IpcRendererEvent, data: { toolId: string; code: string }) => cb(data);
+  onOAuthCallback: (cb: (data: { success: boolean; toolId: string; error?: string }) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, data: { success: boolean; toolId: string; error?: string }) => cb(data);
     ipcRenderer.on(IPC.OAUTH_CALLBACK, handler);
     return () => { ipcRenderer.removeListener(IPC.OAUTH_CALLBACK, handler); };
   },
@@ -64,6 +66,34 @@ const api = {
     ipcRenderer.on(IPC.NAVIGATE_TO_TASK, handler);
     return () => { ipcRenderer.removeListener(IPC.NAVIGATE_TO_TASK, handler); };
   },
+
+  // Paddle billing
+  paddle: {
+    getConfig: () => ipcRenderer.invoke(IPC.PADDLE_GET_CONFIG) as Promise<{
+      clientToken: string;
+      priceIdMonthly: string;
+      priceIdYearly: string;
+    }>,
+  },
+
+  // Feedback
+  feedback: {
+    captureScreenshot: () => ipcRenderer.invoke(IPC.FEEDBACK_CAPTURE_SCREENSHOT) as Promise<{
+      success: boolean;
+      data?: string;
+      error?: string;
+    }>,
+    send: (data: {
+      category: string;
+      subject: string;
+      message: string;
+      screenshotDataUrl?: string;
+    }) => ipcRenderer.invoke(IPC.FEEDBACK_SEND, data) as Promise<{
+      success: boolean;
+      error?: string;
+    }>,
+  },
+
 };
 
 export type ZaptaskAPI = typeof api;

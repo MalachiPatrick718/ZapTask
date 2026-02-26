@@ -2,14 +2,23 @@ import { BrowserWindow } from 'electron';
 import type { Task, TaskSource } from '../../shared/types';
 import type { IntegrationService, SyncResult } from './types';
 import { JiraService } from './jira';
+import { AsanaService } from './asana';
 import { NotionService } from './notion';
 import { GCalService } from './gcal';
+import { MondayService } from './monday';
+import { OutlookService } from './outlook';
+import { AppleCalService } from './apple-cal';
 import { IPC } from '../../shared/types/ipc-channels';
+import { getValidAccessToken } from '../auth/oauth-manager';
 
 const services: Record<string, IntegrationService> = {
   jira: new JiraService(),
+  asana: new AsanaService(),
   notion: new NotionService(),
+  monday: new MondayService(),
   gcal: new GCalService(),
+  outlook: new OutlookService(),
+  apple_cal: new AppleCalService(),
 };
 
 export class SyncEngine {
@@ -56,8 +65,15 @@ export class SyncEngine {
     this.broadcastStatus(source, 'syncing');
 
     try {
-      // Fetch tasks (using empty token for stubs)
-      const remoteTasks = await service.fetchTasks('');
+      // Get access token (auto-refreshes if expired)
+      let accessToken = '';
+      try {
+        accessToken = await getValidAccessToken(source);
+      } catch (err) {
+        console.warn(`[Sync] Could not get token for ${source}, using stub:`, err);
+      }
+
+      const remoteTasks = await service.fetchTasks(accessToken);
       const now = new Date().toISOString();
 
       // Send fetched tasks to renderer for merge

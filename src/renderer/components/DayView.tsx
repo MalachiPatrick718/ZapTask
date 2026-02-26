@@ -4,6 +4,8 @@ import { useStore } from '../store';
 import { TaskCard } from './shared/TaskCard';
 import { scheduleTaskIntoDay } from '../services/scheduler';
 import { DaySummaryModal } from './shared/DaySummaryModal';
+import { ProBadge } from './shared/UpgradePrompt';
+import { useSubscription } from '../hooks/useSubscription';
 import type { EnergyLevel, Task } from '../../shared/types';
 
 /** Convert "HH:MM" (24h) to "h:mmam/pm" */
@@ -15,9 +17,8 @@ function to12h(time: string): string {
 }
 
 const HOUR_HEIGHT = 64;
-const START_HOUR = 7;
-const END_HOUR = 22;
-const TOTAL_HOURS = END_HOUR - START_HOUR;
+const DEFAULT_startHour = 7;
+const DEFAULT_endHour = 22;
 
 const energyColors: Record<EnergyLevel, string> = {
   high: 'var(--energy-high)',
@@ -27,6 +28,20 @@ const energyColors: Record<EnergyLevel, string> = {
 
 export function DayView() {
   const energyProfile = useStore((s) => s.energyProfile);
+
+  // Derive timeline range from energy blocks so custom blocks always appear
+  const startHour = useMemo(() => {
+    const earliest = energyProfile.blocks.reduce((min, b) => Math.min(min, b.start), DEFAULT_startHour);
+    return Math.min(earliest, DEFAULT_startHour);
+  }, [energyProfile.blocks]);
+
+  const endHour = useMemo(() => {
+    const latest = energyProfile.blocks.reduce((max, b) => Math.max(max, b.end), DEFAULT_endHour);
+    return Math.max(latest, DEFAULT_endHour);
+  }, [energyProfile.blocks]);
+
+  const totalHours = endHour - startHour;
+  const { canUseDaySummary, canUsePomodoro } = useSubscription();
   const schedule = useStore((s) => s.schedule);
   const tasks = useStore((s) => s.tasks);
   const updateTask = useStore((s) => s.updateTask);
@@ -79,9 +94,9 @@ export function DayView() {
 
   // Now line position
   const nowHour = now.getHours() + now.getMinutes() / 60;
-  const nowOffset = (nowHour - START_HOUR) * HOUR_HEIGHT;
+  const nowOffset = (nowHour - startHour) * HOUR_HEIGHT;
   const isTodaySelected = selectedStr === todayStr;
-  const showNowLine = isTodaySelected && nowHour >= START_HOUR && nowHour <= END_HOUR;
+  const showNowLine = isTodaySelected && nowHour >= startHour && nowHour <= endHour;
 
   // Get energy level for a given hour
   const getEnergyForHour = (hour: number): EnergyLevel | null => {
@@ -130,19 +145,20 @@ export function DayView() {
             </div>
           </div>
           <button
-            onClick={() => setShowSummary(true)}
+            onClick={() => canUseDaySummary() ? setShowSummary(true) : window.dispatchEvent(new CustomEvent('zaptask:showPricing'))}
             style={{
               padding: '4px 10px', fontSize: 12,
               fontFamily: 'var(--font-mono)',
               background: 'var(--surface)',
               border: '1px solid var(--border)',
               borderRadius: 'var(--radius-sm)',
-              color: 'var(--accent)',
+              color: canUseDaySummary() ? 'var(--accent)' : 'var(--text3)',
               cursor: 'pointer', flexShrink: 0,
               marginTop: 2,
+              display: 'flex', alignItems: 'center', gap: 4,
             }}
           >
-            Summary
+            Summary {!canUseDaySummary() && <ProBadge />}
           </button>
         </div>
 
@@ -247,13 +263,13 @@ export function DayView() {
         <div style={{ position: 'relative' }}>
           <div style={{
             position: 'relative',
-            height: TOTAL_HOURS * HOUR_HEIGHT,
+            height: totalHours * HOUR_HEIGHT,
             marginLeft: 44,
             marginRight: 14,
           }}>
             {/* Hour rows with energy backgrounds */}
-            {Array.from({ length: TOTAL_HOURS }, (_, i) => {
-              const hour = START_HOUR + i;
+            {Array.from({ length: totalHours }, (_, i) => {
+              const hour = startHour + i;
               const energy = getEnergyForHour(hour);
               const bgColor = energy ? energyColors[energy] : 'transparent';
 
@@ -288,6 +304,54 @@ export function DayView() {
               );
             })}
 
+            {/* Energy block labels */}
+            {energyProfile.blocks
+              .filter((eb) => eb.end > startHour && eb.start < endHour)
+              .map((eb) => {
+                const clampedStart = Math.max(eb.start, startHour);
+                const clampedEnd = Math.min(eb.end, endHour);
+                const top = (clampedStart - startHour) * HOUR_HEIGHT;
+                const height = (clampedEnd - clampedStart) * HOUR_HEIGHT;
+                const color = energyColors[eb.level];
+                const energyIcons: Record<EnergyLevel, string> = {
+                  high: '\u26A1', medium: '\uD83D\uDD0B', low: '\uD83C\uDF19',
+                };
+                return (
+                  <div
+                    key={eb.id}
+                    style={{
+                      position: 'absolute',
+                      top,
+                      left: 0,
+                      right: 0,
+                      height,
+                      pointerEvents: 'none',
+                      zIndex: 1,
+                    }}
+                  >
+                    {/* Label pinned to top-right of energy block */}
+                    <div style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: '2px 8px',
+                      borderRadius: 'var(--radius-sm)',
+                      background: `color-mix(in srgb, ${color} 18%, var(--surface))`,
+                      border: `1px solid color-mix(in srgb, ${color} 25%, var(--border))`,
+                      fontSize: 10,
+                      fontFamily: 'var(--font-mono)',
+                      fontWeight: 600,
+                      color,
+                    }}>
+                      {energyIcons[eb.level]} {eb.label}
+                    </div>
+                  </div>
+                );
+              })}
+
             {/* Scheduled time blocks */}
             {selectedBlocks.map((block) => {
               const task = tasks.find((t) => t.id === block.taskId);
@@ -295,7 +359,7 @@ export function DayView() {
 
               const [startH, startM] = block.start.split(':').map(Number);
               const [endH, endM] = block.end.split(':').map(Number);
-              const startOffset = (startH + startM / 60 - START_HOUR) * HOUR_HEIGHT;
+              const startOffset = (startH + startM / 60 - startHour) * HOUR_HEIGHT;
               const duration = (endH + endM / 60 - startH - startM / 60) * HOUR_HEIGHT;
               const minHeight = 56;
 
@@ -353,7 +417,7 @@ export function DayView() {
                       }}>
                         {task.title}
                       </div>
-                      {task.status !== 'done' && (
+                      {task.status !== 'done' && canUsePomodoro() && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -439,6 +503,12 @@ export function DayView() {
           </div>
         </div>
       </div>
+
+      <DaySummaryModal
+        isOpen={showSummary}
+        date={selectedStr}
+        onClose={() => setShowSummary(false)}
+      />
     </div>
   );
 }

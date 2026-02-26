@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useStore } from '../../store';
 import { Btn } from '../shared/Btn';
 import { CalendarModal } from '../shared/CalendarModal';
+import { UpgradePrompt } from '../shared/UpgradePrompt';
+import { useSubscription } from '../../hooks/useSubscription';
 import type { EnergyLevel, Task } from '../../../shared/types';
 import { format } from 'date-fns';
 
@@ -9,6 +11,7 @@ export function AddTaskPanel() {
   const addTask = useStore((s) => s.addTask);
   const setActivePanel = useStore((s) => s.setActivePanel);
   const addToast = useStore((s) => s.addToast);
+  const { canAddTask } = useSubscription();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -21,7 +24,7 @@ export function AddTaskPanel() {
   const [tags, setTags] = useState('');
   const [showDueDatePicker, setShowDueDatePicker] = useState(false);
 
-  const canSave = title.trim().length > 0 && energyRequired !== null;
+  const canSave = title.trim().length > 0 && energyRequired !== null && canAddTask();
 
   const [saving, setSaving] = useState(false);
 
@@ -123,6 +126,13 @@ export function AddTaskPanel() {
 
       {/* Form */}
       <div style={{ flex: 1, overflow: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {!canAddTask() && (
+          <UpgradePrompt
+            feature="Task limit reached"
+            description="Free plan allows up to 10 active tasks. Upgrade to Pro for unlimited tasks."
+          />
+        )}
+
         {/* Title */}
         <div>
           <label style={labelStyle}>Title *</label>
