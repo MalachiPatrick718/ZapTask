@@ -109,15 +109,43 @@ export default function TermsPage() {
                 <strong>Cancellation:</strong> You may cancel your Pro
                 subscription at any time. Access to Pro features continues until
                 the end of the current billing period. After cancellation, your
-                account reverts to the Free tier. No refunds are provided for
-                partial billing periods.
+                account reverts to the Free tier.
               </p>
             </section>
 
             {/* 4 */}
             <section>
               <h2 className="text-xl font-semibold text-foreground mb-3">
-                4. Acceptable Use
+                4. Refund Policy
+              </h2>
+              <p className="mb-3">
+                We want you to be happy with ZapTask. If you are not satisfied
+                with your Pro subscription, you may request a full refund within
+                14 days of any payment. Refunds are processed by our payment
+                provider, Paddle.com.
+              </p>
+              <p className="mb-3">
+                To request a refund, contact us at{" "}
+                <a
+                  href="mailto:support@zaptask.io"
+                  className="text-zap hover:underline"
+                >
+                  support@zaptask.io
+                </a>{" "}
+                with your account email and the reason for your request. Refunds
+                are typically processed within 5&ndash;10 business days.
+              </p>
+              <p>
+                This refund policy applies equally to all customers regardless
+                of location, plan, or payment method. No exceptions or
+                additional conditions apply.
+              </p>
+            </section>
+
+            {/* 5 */}
+            <section>
+              <h2 className="text-xl font-semibold text-foreground mb-3">
+                5. Acceptable Use
               </h2>
               <p className="mb-3">You agree not to:</p>
               <ul className="list-disc pl-6 space-y-2">
@@ -140,10 +168,10 @@ export default function TermsPage() {
               </ul>
             </section>
 
-            {/* 5 */}
+            {/* 6 */}
             <section>
               <h2 className="text-xl font-semibold text-foreground mb-3">
-                5. Third-Party Integrations
+                6. Third-Party Integrations
               </h2>
               <p>
                 ZapTask connects to third-party services including Jira, Asana,
@@ -158,10 +186,10 @@ export default function TermsPage() {
               </p>
             </section>
 
-            {/* 6 */}
+            {/* 7 */}
             <section>
               <h2 className="text-xl font-semibold text-foreground mb-3">
-                6. Intellectual Property
+                7. Intellectual Property
               </h2>
               <p>
                 ZapTask and its original content, features, and functionality are
@@ -172,10 +200,10 @@ export default function TermsPage() {
               </p>
             </section>
 
-            {/* 7 */}
+            {/* 8 */}
             <section>
               <h2 className="text-xl font-semibold text-foreground mb-3">
-                7. Limitation of Liability
+                8. Limitation of Liability
               </h2>
               <p>
                 To the maximum extent permitted by applicable law, ZapTask shall
@@ -188,10 +216,10 @@ export default function TermsPage() {
               </p>
             </section>
 
-            {/* 8 */}
+            {/* 9 */}
             <section>
               <h2 className="text-xl font-semibold text-foreground mb-3">
-                8. Disclaimer of Warranties
+                9. Disclaimer of Warranties
               </h2>
               <p>
                 ZapTask is provided &ldquo;as is&rdquo; and &ldquo;as
@@ -202,10 +230,10 @@ export default function TermsPage() {
               </p>
             </section>
 
-            {/* 9 */}
+            {/* 10 */}
             <section>
               <h2 className="text-xl font-semibold text-foreground mb-3">
-                9. Termination
+                10. Termination
               </h2>
               <p>
                 We may suspend or terminate your access to ZapTask at any time,
@@ -216,10 +244,10 @@ export default function TermsPage() {
               </p>
             </section>
 
-            {/* 10 */}
+            {/* 11 */}
             <section>
               <h2 className="text-xl font-semibold text-foreground mb-3">
-                10. Changes to These Terms
+                11. Changes to These Terms
               </h2>
               <p>
                 We reserve the right to modify these Terms at any time. If we
@@ -229,10 +257,10 @@ export default function TermsPage() {
               </p>
             </section>
 
-            {/* 11 */}
+            {/* 12 */}
             <section>
               <h2 className="text-xl font-semibold text-foreground mb-3">
-                11. Contact Us
+                12. Contact Us
               </h2>
               <p>
                 If you have questions about these Terms, contact us at{" "}

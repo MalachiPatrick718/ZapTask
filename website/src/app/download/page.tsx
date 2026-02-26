@@ -18,7 +18,7 @@ const platforms = [
     icon: "\uD83C\uDF4E",
     version: "macOS 12 (Monterey) or later",
     arch: "Apple Silicon & Intel",
-    fileName: `ZapTask-${VERSION}-arm64.dmg`,
+    fileName: "ZapTask.dmg",
     primary: true,
   },
   {
@@ -26,7 +26,7 @@ const platforms = [
     icon: "\uD83E\uDE9F",
     version: "Windows 10 or later",
     arch: "64-bit",
-    fileName: `ZapTask-${VERSION} Setup.exe`,
+    fileName: `ZapTask-${VERSION}-Setup.exe`,
     primary: false,
   },
 ];
