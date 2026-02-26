@@ -1,3 +1,8 @@
+"use client";
+
+import { FadeIn } from "@/components/ui/FadeIn";
+import { SectionWrapper } from "@/components/ui/SectionWrapper";
+
 const steps = [
   {
     number: "1",
@@ -21,33 +26,40 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section className="py-24 px-6 bg-surface">
-      <div className="max-w-4xl mx-auto">
+    <SectionWrapper className="bg-surface">
+      <FadeIn>
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
             How it works
           </h2>
           <p className="text-lg text-gray-500">
             Three steps to a more productive day.
           </p>
         </div>
+      </FadeIn>
+
+      <div className="relative max-w-4xl mx-auto">
+        {/* Horizontal connecting line (desktop) */}
+        <div className="hidden md:block absolute top-6 left-[16.67%] right-[16.67%] h-0.5 bg-gradient-to-r from-zap via-zap-light to-zap rounded-full" />
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-          {steps.map((step) => (
-            <div key={step.number} className="text-center">
-              <div className="w-12 h-12 rounded-full bg-zap text-white text-xl font-bold flex items-center justify-center mx-auto mb-4">
-                {step.number}
+          {steps.map((step, i) => (
+            <FadeIn key={step.number} staggerIndex={i} staggerDelay={0.15}>
+              <div className="text-center relative">
+                <div className="relative z-10 w-12 h-12 rounded-full bg-zap text-white text-xl font-bold flex items-center justify-center mx-auto mb-6 shadow-lg shadow-zap/20">
+                  {step.number}
+                </div>
+                <h3 className="text-xl font-semibold text-foreground mb-2">
+                  {step.title}
+                </h3>
+                <p className="text-sm text-gray-500 leading-relaxed max-w-xs mx-auto">
+                  {step.description}
+                </p>
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                {step.title}
-              </h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                {step.description}
-              </p>
-            </div>
+            </FadeIn>
           ))}
         </div>
       </div>
-    </section>
+    </SectionWrapper>
   );
 }

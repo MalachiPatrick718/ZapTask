@@ -1,74 +1,135 @@
+"use client";
+
+import { FadeIn } from "@/components/ui/FadeIn";
+import { SectionWrapper } from "@/components/ui/SectionWrapper";
+
 const features = [
   {
-    icon: "⚡",
+    icon: "\u26A1",
     title: "Energy-Aware Scheduling",
     description:
       "Tell ZapTask when you peak and when you crash. It matches demanding tasks to your sharpest hours and routine work to your downtime.",
+    bullets: [
+      "Set your personal energy profile",
+      "Tasks auto-sorted by cognitive demand",
+      "Adapts to your changing rhythms",
+    ],
   },
   {
-    icon: "🔗",
+    icon: "\uD83D\uDD17",
     title: "Unified Task View",
     description:
       "Pull tasks from Jira, Asana, Monday.com, Notion, Google Calendar, Outlook, and more into one place. No more tab-switching.",
+    bullets: [
+      "Secure OAuth for every platform",
+      "Real-time sync updates",
+      "Filter and search across all sources",
+    ],
   },
   {
-    icon: "🍅",
-    title: "Pomodoro Timer",
+    icon: "\uD83C\uDF45",
+    title: "Built-in Pomodoro Timer",
     description:
       "Built-in focus timer with customizable work and break intervals. Track your productive sessions per task.",
+    bullets: [
+      "Customizable focus & break durations",
+      "Per-task session tracking",
+      "Desktop notifications on completion",
+    ],
   },
   {
-    icon: "📅",
-    title: "Day Planner",
-    description:
-      "Visual timeline of your day with drag-and-drop scheduling. See meetings and tasks side by side.",
-  },
-  {
-    icon: "📝",
-    title: "Quick Notes",
-    description:
-      "Attach notes to any task. Capture context, meeting notes, or ideas right where you need them.",
-  },
-  {
-    icon: "🖥️",
-    title: "Desktop Widget",
+    icon: "\uD83D\uDDA5\uFE0F",
+    title: "Always-on Desktop Widget",
     description:
       "Always-on-top minimal widget that lives on your desktop. Glance at your tasks without breaking flow.",
+    bullets: [
+      "Stays on top of all windows",
+      "Minimal footprint on screen",
+      "Keyboard shortcuts for everything",
+    ],
   },
 ];
 
+const CheckIcon = () => (
+  <svg
+    className="w-4 h-4 text-zap flex-shrink-0"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2.5}
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+  </svg>
+);
+
 export function Features() {
   return (
-    <section id="features" className="py-24 px-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+    <SectionWrapper id="features" wide>
+      <FadeIn>
+        <div className="text-center mb-20">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
             Built around how you actually work
           </h2>
           <p className="text-lg text-gray-500 max-w-2xl mx-auto">
             Most productivity apps treat every hour the same. ZapTask knows
-            you&apos;re not a machine &mdash; it adapts to your energy, unifies
-            your tools, and keeps you in flow.
+            you&apos;re not a machine.
           </p>
         </div>
+      </FadeIn>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature) => (
+      <div className="space-y-24 md:space-y-32">
+        {features.map((feature, i) => {
+          const isReversed = i % 2 === 1;
+          return (
             <div
               key={feature.title}
-              className="p-6 rounded-xl border border-border bg-white hover:shadow-lg hover:shadow-zap/5 transition-shadow"
+              className={`flex flex-col ${
+                isReversed ? "md:flex-row-reverse" : "md:flex-row"
+              } items-center gap-12 md:gap-16`}
             >
-              <span className="text-2xl mb-4 block">{feature.icon}</span>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                {feature.title}
-              </h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                {feature.description}
-              </p>
+              {/* Text side */}
+              <FadeIn
+                direction={isReversed ? "right" : "left"}
+                className="flex-1"
+              >
+                <span className="text-4xl mb-4 block">{feature.icon}</span>
+                <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-500 leading-relaxed mb-6">
+                  {feature.description}
+                </p>
+                <ul className="space-y-2.5">
+                  {feature.bullets.map((bullet) => (
+                    <li
+                      key={bullet}
+                      className="flex items-center gap-2.5 text-sm text-gray-600"
+                    >
+                      <CheckIcon />
+                      {bullet}
+                    </li>
+                  ))}
+                </ul>
+              </FadeIn>
+
+              {/* Mockup side */}
+              <FadeIn
+                direction={isReversed ? "left" : "right"}
+                className="flex-1 w-full"
+              >
+                <div className="rounded-2xl border border-border bg-gradient-to-br from-zap-bg via-white to-blue-50 p-12 aspect-[4/3] flex items-center justify-center shadow-lg shadow-black/5">
+                  <div className="text-center">
+                    <span className="text-6xl block mb-3">{feature.icon}</span>
+                    <p className="text-sm text-gray-400 font-mono">
+                      Feature preview
+                    </p>
+                  </div>
+                </div>
+              </FadeIn>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
-    </section>
+    </SectionWrapper>
   );
 }

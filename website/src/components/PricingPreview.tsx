@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { FadeIn } from "@/components/ui/FadeIn";
+import { SectionWrapper } from "@/components/ui/SectionWrapper";
 
 const plans = [
   {
@@ -31,35 +35,36 @@ const plans = [
     cta: "Start 14-Day Free Trial",
     href: "/download",
     accent: true,
-    badge: "14-day free trial",
+    badge: "Most Popular",
   },
 ];
 
 export function PricingPreview() {
   return (
-    <section id="pricing" className="py-24 px-6">
-      <div className="max-w-4xl mx-auto">
+    <SectionWrapper id="pricing">
+      <FadeIn>
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-4">
             Simple, transparent pricing
           </h2>
           <p className="text-lg text-gray-500">
             Start free. Upgrade when you need more.
           </p>
         </div>
+      </FadeIn>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-          {plans.map((plan) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+        {plans.map((plan, i) => (
+          <FadeIn key={plan.name} staggerIndex={i} staggerDelay={0.15}>
             <div
-              key={plan.name}
-              className={`relative p-8 rounded-2xl border-2 ${
+              className={`relative p-8 rounded-2xl border-2 transition-transform duration-200 hover:scale-[1.02] ${
                 plan.accent
-                  ? "border-zap bg-gradient-to-b from-zap-bg to-white"
-                  : "border-border bg-white"
+                  ? "border-zap bg-gradient-to-b from-zap-bg to-white ring-2 ring-zap/10 shadow-lg shadow-zap/10"
+                  : "border-border bg-white hover:shadow-lg"
               }`}
             >
               {plan.badge && (
-                <div className="absolute -top-3 right-6 px-3 py-1 rounded-full bg-zap text-white text-xs font-semibold">
+                <div className="absolute -top-3 right-6 px-3 py-1 rounded-full bg-zap text-white text-xs font-semibold shadow-md shadow-zap/20">
                   {plan.badge}
                 </div>
               )}
@@ -115,9 +120,9 @@ export function PricingPreview() {
                 {plan.cta}
               </Link>
             </div>
-          ))}
-        </div>
+          </FadeIn>
+        ))}
       </div>
-    </section>
+    </SectionWrapper>
   );
 }

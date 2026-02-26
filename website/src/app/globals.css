@@ -21,3 +21,48 @@ body {
   background: var(--color-background);
   color: var(--color-foreground);
 }
+
+/* Decorative gradient blobs */
+.blob-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+.blob-zap { background: var(--color-zap); }
+.blob-blue { background: #3b82f6; }
+
+/* Section gradients */
+.gradient-hero {
+  background: linear-gradient(180deg, #FFF5F0 0%, #FFFFFF 60%, #F8F9FA 100%);
+}
+.gradient-cta {
+  background: linear-gradient(135deg, var(--color-zap) 0%, #FF8F66 50%, #FFB088 100%);
+}
+.gradient-subtle {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F8F9FA 100%);
+}
+
+/* Browser frame mockup */
+.browser-frame {
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.03);
+}
+.browser-frame-bar {
+  height: 40px;
+  background: #F3F4F6;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 8px;
+  border-bottom: 1px solid var(--color-border);
+}
+.browser-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
