@@ -48,6 +48,7 @@ export function useSubscription() {
   const canConnectIntegration = () => computed.connectedCount < computed.limits.maxIntegrations;
   const canUsePomodoro = () => computed.limits.pomodoroEnabled;
   const canUseDaySummary = () => computed.limits.daySummaryEnabled;
+  const canUseEnergyScheduling = () => computed.limits.energySchedulingEnabled;
 
   return {
     ...computed,
@@ -55,6 +56,7 @@ export function useSubscription() {
     canConnectIntegration,
     canUsePomodoro,
     canUseDaySummary,
+    canUseEnergyScheduling,
     subscription,
     setSubscription,
   };

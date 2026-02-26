@@ -48,7 +48,7 @@ function createDefaultSubscription(): Subscription {
   const trialEnd = new Date(now);
   trialEnd.setDate(trialEnd.getDate() + 14);
   return {
-    tier: 'trial',
+    tier: 'free',
     status: 'active',
     trialStartedAt: now.toISOString(),
     trialEndsAt: trialEnd.toISOString(),

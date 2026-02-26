@@ -12,12 +12,13 @@ import { PomodoroBar } from './components/PomodoroBar';
 import { TrialBanner } from './components/TrialBanner';
 import { PricingModal } from './components/PricingModal';
 import { useStore, type ActiveView } from './store';
+import { useSubscription } from './hooks/useSubscription';
 
 // Tab icons (settings is accessed via TitleBar gear, not bottom nav)
 const tabs: { id: ActiveView; label: string; icon: string }[] = [
   { id: 'tasks', label: 'Tasks', icon: '\u2611' },
   { id: 'suggested', label: 'Suggested', icon: '\u26A1' },
-  { id: 'day', label: "Today's Work", icon: '\uD83D\uDCC5' },
+  { id: 'day', label: 'Today', icon: '\uD83D\uDCC5' },
 ];
 
 function BottomNav() {
@@ -26,6 +27,7 @@ function BottomNav() {
   const windowMode = useStore((s) => s.windowMode);
   const tasks = useStore((s) => s.tasks);
   const schedule = useStore((s) => s.schedule);
+  const { canUseEnergyScheduling } = useSubscription();
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const todayCount = useMemo(() => {
@@ -102,8 +104,14 @@ function BottomNav() {
               fontSize: 11,
               fontFamily: 'var(--font-mono)',
               fontWeight: active ? 600 : 400,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 3,
             }}>
               {tab.label}
+              {tab.id === 'suggested' && !canUseEnergyScheduling() && (
+                <span style={{ fontSize: 9, opacity: 0.6 }}>{'\uD83D\uDD12'}</span>
+              )}
             </span>
           </button>
         );

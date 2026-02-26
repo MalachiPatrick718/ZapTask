@@ -6,18 +6,12 @@ const footerLinks = {
     { label: "Features", href: "/#features" },
     { label: "Pricing", href: "/pricing" },
     { label: "Download", href: "/download" },
-    { label: "Changelog", href: "#" },
-  ],
-  Resources: [
-    { label: "Documentation", href: "#" },
-    { label: "Blog", href: "#" },
-    { label: "Support", href: "#" },
-    { label: "Contact", href: "#" },
+    { label: "Support", href: "mailto:support@zaptask.io" },
   ],
   Legal: [
-    { label: "Privacy Policy", href: "#" },
-    { label: "Terms of Service", href: "#" },
-    { label: "Cookie Policy", href: "#" },
+    { label: "Privacy Policy", href: "/privacy" },
+    { label: "Terms of Service", href: "/terms" },
+    { label: "Cookie Policy", href: "/cookies" },
   ],
 };
 
@@ -25,7 +19,7 @@ export function Footer() {
   return (
     <footer className="border-t border-border bg-white">
       <div className="max-w-6xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
           {/* Brand */}
           <div className="col-span-2">
             <div className="flex items-center gap-2.5 mb-4">

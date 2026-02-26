@@ -9,7 +9,6 @@ const integrations = [
   { name: "Notion", color: "#000000" },
   { name: "Google Calendar", color: "#4285F4" },
   { name: "Outlook", color: "#0078D4" },
-  { name: "Apple Calendar", color: "#FF3B30" },
 ];
 
 export function Integrations() {

@@ -53,6 +53,10 @@ export function AddTaskPanel() {
       createdAt: now,
       updatedAt: now,
       syncedAt: null,
+      startTime: null,
+      endTime: null,
+      location: null,
+      conferenceUrl: null,
     };
 
     try {

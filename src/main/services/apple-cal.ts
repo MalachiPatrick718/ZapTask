@@ -31,6 +31,10 @@ export class AppleCalService implements IntegrationService {
         createdAt: now,
         updatedAt: now,
         syncedAt: now,
+        startTime: `${tomorrow}T07:00:00`,
+        endTime: `${tomorrow}T08:00:00`,
+        location: 'Downtown Gym',
+        conferenceUrl: null,
       },
     ];
   }

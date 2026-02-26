@@ -10,12 +10,12 @@ declare global {
 
 const features = [
   { name: 'Local tasks', free: true, pro: true },
-  { name: 'Energy-aware scheduling', free: true, pro: true },
-  { name: 'Day planner timeline', free: true, pro: true },
+  { name: 'Timeboxing', free: true, pro: true },
   { name: 'Up to 10 active tasks', free: true, pro: false },
   { name: 'Unlimited tasks', free: false, pro: true },
   { name: '1 integration', free: true, pro: false },
-  { name: 'All 6 integrations', free: false, pro: true },
+  { name: 'Unlimited integrations', free: false, pro: true },
+  { name: 'Energy-aware scheduling', free: false, pro: true },
   { name: 'Pomodoro timer', free: false, pro: true },
   { name: 'Day summary export', free: false, pro: true },
 ];

@@ -78,19 +78,36 @@ export function DayView() {
     [tasks, selectedStr],
   );
 
+  // Calendar events for selected day (gcal/outlook/apple_cal with startTime)
+  const calendarSources = new Set(['gcal', 'outlook', 'apple_cal']);
+  const calendarEvents = useMemo(
+    () => tasks.filter((t) => {
+      if (!calendarSources.has(t.source) || !t.startTime) return false;
+      const eventDate = t.startTime.slice(0, 10);
+      return eventDate === selectedStr;
+    }),
+    [tasks, selectedStr],
+  );
+
   // IDs of tasks already scheduled as time blocks on this day
   const scheduledTaskIds = useMemo(
     () => new Set(selectedBlocks.map((b) => b.taskId)),
     [selectedBlocks],
   );
 
-  // Due tasks that aren't already on the timeline
-  const unscheduledDueTasks = useMemo(
-    () => dueTasks.filter((t) => !scheduledTaskIds.has(t.id)),
-    [dueTasks, scheduledTaskIds],
+  // Calendar event IDs (so we don't double-show them)
+  const calendarEventIds = useMemo(
+    () => new Set(calendarEvents.map((t) => t.id)),
+    [calendarEvents],
   );
 
-  const totalItems = selectedBlocks.length + unscheduledDueTasks.length;
+  // Due tasks that aren't already on the timeline or calendar
+  const unscheduledDueTasks = useMemo(
+    () => dueTasks.filter((t) => !scheduledTaskIds.has(t.id) && !calendarEventIds.has(t.id)),
+    [dueTasks, scheduledTaskIds, calendarEventIds],
+  );
+
+  const totalItems = selectedBlocks.length + unscheduledDueTasks.length + calendarEvents.length;
 
   // Now line position
   const nowHour = now.getHours() + now.getMinutes() / 60;

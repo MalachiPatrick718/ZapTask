@@ -3,11 +3,15 @@ import { useStore } from '../../store';
 import { AccountStep } from './AccountStep';
 import { ConnectToolsStep } from './ConnectToolsStep';
 import { EnergyProfileStep } from './EnergyProfileStep';
+import { PlanStep } from './PlanStep';
+
+const TOTAL_STEPS = 4;
 
 export function Onboarding() {
   const [step, setStep] = useState(1);
   const setUser = useStore((s) => s.setUser);
   const setOnboardingComplete = useStore((s) => s.setOnboardingComplete);
+  const setSubscription = useStore((s) => s.setSubscription);
 
   const handleAccountContinue = (name: string, email: string) => {
     setUser({ name, email });
@@ -19,6 +23,24 @@ export function Onboarding() {
   };
 
   const handleEnergyComplete = () => {
+    setStep(4);
+  };
+
+  const handleChooseFree = () => {
+    setSubscription({ tier: 'free', status: 'active' });
+    setOnboardingComplete(true);
+  };
+
+  const handleChooseTrial = () => {
+    const now = new Date();
+    const trialEnd = new Date(now);
+    trialEnd.setDate(trialEnd.getDate() + 14);
+    setSubscription({
+      tier: 'trial',
+      status: 'active',
+      trialStartedAt: now.toISOString(),
+      trialEndsAt: trialEnd.toISOString(),
+    });
     setOnboardingComplete(true);
   };
 
@@ -57,7 +79,7 @@ export function Onboarding() {
         gap: 8,
         padding: '16px 0 8px',
       }}>
-        {[1, 2, 3].map((s) => (
+        {Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map((s) => (
           <div key={s} style={{
             width: s === step ? 24 : 8,
             height: 8,
@@ -77,6 +99,7 @@ export function Onboarding() {
         {step === 1 && <AccountStep onContinue={handleAccountContinue} />}
         {step === 2 && <ConnectToolsStep onContinue={handleToolsContinue} />}
         {step === 3 && <EnergyProfileStep onComplete={handleEnergyComplete} />}
+        {step === 4 && <PlanStep onChooseFree={handleChooseFree} onChooseTrial={handleChooseTrial} />}
       </div>
     </div>
   );

@@ -38,6 +38,21 @@ const sourceLabels: Record<string, { label: string; color: string }> = {
   local: { label: 'Local', color: 'var(--text3)' },
 };
 
+const calendarSources = new Set(['gcal', 'outlook', 'apple_cal']);
+
+function formatEventTime(iso: string): string {
+  try {
+    const d = new Date(iso);
+    const h = d.getHours();
+    const m = d.getMinutes();
+    const period = h >= 12 ? 'pm' : 'am';
+    const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    return `${hour12}:${String(m).padStart(2, '0')}${period}`;
+  } catch {
+    return '';
+  }
+}
+
 function isOverdue(dueDate: string | null): boolean {
   if (!dueDate) return false;
   const today = new Date();
@@ -87,6 +102,7 @@ export function TaskCard({ task, onClick, onStatusChange, onAddToDay, onStartPom
   const [showSchedulePicker, setShowSchedulePicker] = useState(false);
   const [showPomodoro, setShowPomodoro] = useState(false);
   const overdue = isOverdue(task.dueDate);
+  const isCalendarEvent = calendarSources.has(task.source);
   const accentColor = task.category === 'work' ? 'var(--accent)' : 'var(--red)';
   const source = sourceLabels[task.source] || sourceLabels.local;
   const energy = task.energyRequired ? energyConfig[task.energyRequired] : null;
@@ -164,6 +180,29 @@ export function TaskCard({ task, onClick, onStatusChange, onAddToDay, onStartPom
           display: 'flex', alignItems: 'center', gap: 6,
           flexWrap: 'wrap', marginBottom: (task.status !== 'done' && (onAddToDay || onStartPomodoro)) ? 6 : 0,
         }}>
+          {/* Calendar event time */}
+          {isCalendarEvent && task.startTime && (
+            <span style={pillStyle('#4285F4', 'rgba(66, 133, 244, 0.1)')}>
+              {'\uD83D\uDD52'} {formatEventTime(task.startTime)}
+              {task.endTime && ` \u2013 ${formatEventTime(task.endTime)}`}
+            </span>
+          )}
+
+          {/* Conference link indicator */}
+          {task.conferenceUrl && (
+            <button
+              onClick={(e) => { e.stopPropagation(); window.zaptask.openUrl(task.conferenceUrl!); }}
+              title="Join meeting"
+              style={{
+                ...pillStyle('var(--teal)', 'rgba(78, 205, 196, 0.12)'),
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              {'\uD83C\uDFA5'} Join
+            </button>
+          )}
+
           {energy && (
             <span style={pillStyle(energy.color, energy.bg)}>
               {energy.icon} {energy.label}

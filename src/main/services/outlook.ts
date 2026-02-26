@@ -16,7 +16,7 @@ export class OutlookService implements IntegrationService {
       const startDateTime = now.toISOString();
       const endDateTime = new Date(now.getTime() + 14 * 86400000).toISOString();
 
-      const url = `https://graph.microsoft.com/v1.0/me/calendarview?startDateTime=${encodeURIComponent(startDateTime)}&endDateTime=${encodeURIComponent(endDateTime)}&$top=50&$select=subject,bodyPreview,start,end,webLink,lastModifiedDateTime`;
+      const url = `https://graph.microsoft.com/v1.0/me/calendarview?startDateTime=${encodeURIComponent(startDateTime)}&endDateTime=${encodeURIComponent(endDateTime)}&$top=50&$select=subject,bodyPreview,body,start,end,webLink,lastModifiedDateTime,location,onlineMeeting,isOnlineMeeting`;
       const res = await fetch(url, {
         headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
       });
@@ -51,6 +51,10 @@ export class OutlookService implements IntegrationService {
           createdAt: nowIso,
           updatedAt: event.lastModifiedDateTime || nowIso,
           syncedAt: nowIso,
+          startTime: event.start?.dateTime || null,
+          endTime: event.end?.dateTime || null,
+          location: event.location?.displayName || null,
+          conferenceUrl: event.onlineMeeting?.joinUrl || null,
         } satisfies Task;
       });
     } catch (err) {
@@ -70,6 +74,8 @@ export class OutlookService implements IntegrationService {
         category: 'work', status: 'todo', priority: 'medium', energyRequired: null,
         estimatedMinutes: 30, dueDate: today, tags: ['meeting'],
         notes: [], createdAt: now, updatedAt: now, syncedAt: now,
+        startTime: `${today}T10:00:00`, endTime: `${today}T10:30:00`,
+        location: null, conferenceUrl: 'https://teams.microsoft.com/l/meetup-join/abc123',
       },
     ];
   }

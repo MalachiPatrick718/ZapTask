@@ -38,5 +38,14 @@ export function getInlineMigrations(): Migration[] {
       name: '002_add_notes_column',
       sql: `ALTER TABLE tasks ADD COLUMN notes TEXT NOT NULL DEFAULT '[]';`,
     },
+    {
+      name: '003_add_calendar_event_fields',
+      sql: `
+        ALTER TABLE tasks ADD COLUMN start_time TEXT;
+        ALTER TABLE tasks ADD COLUMN end_time TEXT;
+        ALTER TABLE tasks ADD COLUMN location TEXT;
+        ALTER TABLE tasks ADD COLUMN conference_url TEXT;
+      `,
+    },
   ];
 }

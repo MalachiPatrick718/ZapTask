@@ -20,6 +20,10 @@ interface TaskRow {
   created_at: string;
   updated_at: string;
   synced_at: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  location: string | null;
+  conference_url: string | null;
 }
 
 function rowToTask(row: TaskRow): Task {
@@ -41,6 +45,10 @@ function rowToTask(row: TaskRow): Task {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     syncedAt: row.synced_at,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    location: row.location,
+    conferenceUrl: row.conference_url,
   };
 }
 
@@ -63,6 +71,10 @@ function taskToParams(task: Task) {
     created_at: task.createdAt,
     updated_at: task.updatedAt,
     synced_at: task.syncedAt,
+    start_time: task.startTime,
+    end_time: task.endTime,
+    location: task.location,
+    conference_url: task.conferenceUrl,
   };
 }
 
@@ -84,11 +96,13 @@ export class TaskRepository {
       INSERT INTO tasks (
         id, title, description, source, source_id, source_url,
         category, status, priority, energy_required,
-        estimated_minutes, due_date, tags, notes, created_at, updated_at, synced_at
+        estimated_minutes, due_date, tags, notes, created_at, updated_at, synced_at,
+        start_time, end_time, location, conference_url
       ) VALUES (
         @id, @title, @description, @source, @source_id, @source_url,
         @category, @status, @priority, @energy_required,
-        @estimated_minutes, @due_date, @tags, @notes, @created_at, @updated_at, @synced_at
+        @estimated_minutes, @due_date, @tags, @notes, @created_at, @updated_at, @synced_at,
+        @start_time, @end_time, @location, @conference_url
       )
     `);
 
@@ -99,7 +113,9 @@ export class TaskRepository {
         category = @category, status = @status, priority = @priority,
         energy_required = @energy_required, estimated_minutes = @estimated_minutes,
         due_date = @due_date, tags = @tags, notes = @notes,
-        updated_at = @updated_at, synced_at = @synced_at
+        updated_at = @updated_at, synced_at = @synced_at,
+        start_time = @start_time, end_time = @end_time,
+        location = @location, conference_url = @conference_url
       WHERE id = @id
     `);
 

@@ -82,6 +82,7 @@ export class NotionService implements IntegrationService {
             createdAt: now,
             updatedAt: page.last_edited_time || now,
             syncedAt: now,
+            startTime: null, endTime: null, location: null, conferenceUrl: null,
           });
         }
       }
@@ -104,6 +105,7 @@ export class NotionService implements IntegrationService {
         category: 'work', status: 'todo', priority: 'medium', energyRequired: null,
         estimatedMinutes: 60, dueDate: inTwoDays, tags: ['planning'],
         notes: [], createdAt: now, updatedAt: now, syncedAt: now,
+        startTime: null, endTime: null, location: null, conferenceUrl: null,
       },
       {
         id: 'notion-002', title: 'Research competitor pricing',
@@ -112,6 +114,7 @@ export class NotionService implements IntegrationService {
         category: 'work', status: 'todo', priority: 'low', energyRequired: null,
         estimatedMinutes: 90, dueDate: null, tags: ['research'],
         notes: [], createdAt: now, updatedAt: now, syncedAt: now,
+        startTime: null, endTime: null, location: null, conferenceUrl: null,
       },
     ];
   }

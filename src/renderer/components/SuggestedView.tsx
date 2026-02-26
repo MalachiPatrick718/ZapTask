@@ -3,6 +3,7 @@ import { scheduleTaskIntoDay } from '../services/scheduler';
 import { useStore, getCurrentEnergy } from '../store';
 import { getSuggestions } from '../services/suggestions';
 import { TaskCard } from './shared/TaskCard';
+import { useSubscription } from '../hooks/useSubscription';
 import type { EnergyLevel, Task } from '../../shared/types';
 
 function to12h(time: string): string {
@@ -20,6 +21,7 @@ const energyConfig: Record<EnergyLevel, { icon: string; label: string; color: st
 };
 
 export function SuggestedView() {
+  const { canUseEnergyScheduling } = useSubscription();
   const tasks = useStore((s) => s.tasks);
   const updateTask = useStore((s) => s.updateTask);
   const energyProfile = useStore((s) => s.energyProfile);
@@ -83,6 +85,42 @@ export function SuggestedView() {
       </div>
     </div>
   );
+
+  if (!canUseEnergyScheduling()) {
+    return (
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        height: '100%', gap: 12, padding: 24, textAlign: 'center',
+      }}>
+        <span style={{ fontSize: 40 }}>{'\u26A1'}</span>
+        <h3 style={{
+          fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700,
+          color: 'var(--text1)',
+        }}>
+          Energy-Aware Scheduling
+        </h3>
+        <p style={{ fontSize: 13, color: 'var(--text2)', maxWidth: 280, lineHeight: 1.5 }}>
+          Get personalized task suggestions based on your energy levels throughout the day.
+        </p>
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('zaptask:showPricing'))}
+          style={{
+            padding: '8px 20px',
+            background: 'var(--accent)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: 'pointer',
+            marginTop: 4,
+          }}
+        >
+          {'\uD83D\uDD12'} Upgrade to Pro
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'auto' }}>

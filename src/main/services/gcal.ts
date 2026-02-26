@@ -33,6 +33,11 @@ export class GCalService implements IntegrationService {
           : 0;
         const estimatedMinutes = durationMs > 0 ? Math.round(durationMs / 60000) : null;
 
+        // Extract conference/meeting link
+        const conferenceUrl = event.hangoutLink
+          || event.conferenceData?.entryPoints?.find((e: any) => e.entryPointType === 'video')?.uri
+          || null;
+
         return {
           id: `gcal-${event.id}`,
           title: event.summary || 'Untitled event',
@@ -51,6 +56,10 @@ export class GCalService implements IntegrationService {
           createdAt: nowIso,
           updatedAt: event.updated || nowIso,
           syncedAt: nowIso,
+          startTime: event.start?.dateTime || null,
+          endTime: event.end?.dateTime || null,
+          location: event.location || null,
+          conferenceUrl,
         } satisfies Task;
       });
     } catch (err) {
@@ -71,6 +80,8 @@ export class GCalService implements IntegrationService {
         category: 'work', status: 'todo', priority: 'medium', energyRequired: null,
         estimatedMinutes: 15, dueDate: today, tags: ['meeting'],
         notes: [], createdAt: now, updatedAt: now, syncedAt: now,
+        startTime: `${today}T09:00:00`, endTime: `${today}T09:15:00`,
+        location: null, conferenceUrl: 'https://meet.google.com/abc-defg-hij',
       },
       {
         id: 'gcal-002', title: 'Dentist appointment',
@@ -79,6 +90,8 @@ export class GCalService implements IntegrationService {
         category: 'personal', status: 'todo', priority: null, energyRequired: null,
         estimatedMinutes: 60, dueDate: tomorrow, tags: [],
         notes: [], createdAt: now, updatedAt: now, syncedAt: now,
+        startTime: `${tomorrow}T14:00:00`, endTime: `${tomorrow}T15:00:00`,
+        location: '123 Main St, Suite 200', conferenceUrl: null,
       },
     ];
   }

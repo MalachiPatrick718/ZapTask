@@ -96,6 +96,7 @@ export class MondayService implements IntegrationService {
             createdAt: now,
             updatedAt: item.updated_at || now,
             syncedAt: now,
+            startTime: null, endTime: null, location: null, conferenceUrl: null,
           });
         }
       }
@@ -118,6 +119,7 @@ export class MondayService implements IntegrationService {
         category: 'work', status: 'todo', priority: 'high', energyRequired: null,
         estimatedMinutes: 30, dueDate: tomorrow, tags: ['Sprint Board'],
         notes: [], createdAt: now, updatedAt: now, syncedAt: now,
+        startTime: null, endTime: null, location: null, conferenceUrl: null,
       },
     ];
   }

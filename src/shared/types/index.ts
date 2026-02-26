@@ -27,6 +27,11 @@ export interface Task {
   dueDate: string | null; // ISO date YYYY-MM-DD
   tags: string[];
   notes: TaskNote[];
+  // Calendar event metadata (populated for gcal/outlook/apple_cal sources)
+  startTime: string | null;    // ISO datetime (actual event start)
+  endTime: string | null;      // ISO datetime (actual event end)
+  location: string | null;     // Event location text
+  conferenceUrl: string | null; // Zoom/Meet/Teams join link
   createdAt: string; // ISO datetime
   updatedAt: string; // ISO datetime
   syncedAt: string | null; // ISO datetime
@@ -101,11 +106,13 @@ export const FREE_LIMITS = {
   maxIntegrations: 1,
   pomodoroEnabled: false,
   daySummaryEnabled: false,
+  energySchedulingEnabled: false,
 } as const;
 
 export const PRO_LIMITS = {
   maxTasks: Infinity,
-  maxIntegrations: 6,
+  maxIntegrations: Infinity,
   pomodoroEnabled: true,
   daySummaryEnabled: true,
+  energySchedulingEnabled: true,
 } as const;
