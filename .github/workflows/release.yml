@@ -16,6 +16,7 @@ jobs:
   build-macos:
     runs-on: macos-latest
     strategy:
+      fail-fast: false
       matrix:
         arch: [x64, arm64]
 
@@ -36,8 +37,8 @@ jobs:
           CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
           CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
         run: |
-          # Decode certificate
-          echo "$CERTIFICATE_BASE64" | base64 --decode > certificate.p12
+          # Decode certificate (write to file first to avoid shell escaping issues)
+          echo -n "$CERTIFICATE_BASE64" | base64 --decode > certificate.p12
 
           # Create a temporary keychain
           KEYCHAIN_PATH=$RUNNER_TEMP/signing.keychain-db
