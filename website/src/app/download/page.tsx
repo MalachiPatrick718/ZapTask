@@ -12,33 +12,6 @@ export const metadata: Metadata = {
 const GITHUB_REPO = "MalachiPatrick718/ZapTask";
 const VERSION = "0.1.0";
 
-const platforms = [
-  {
-    name: "macOS (Apple Silicon)",
-    icon: "\uD83C\uDF4E",
-    version: "macOS 12 (Monterey) or later",
-    arch: "M1, M2, M3, M4",
-    fileName: "ZapTask-arm64.dmg",
-    primary: true,
-  },
-  {
-    name: "macOS (Intel)",
-    icon: "\uD83C\uDF4E",
-    version: "macOS 12 (Monterey) or later",
-    arch: "Intel x86_64",
-    fileName: "ZapTask-x64.dmg",
-    primary: false,
-  },
-  {
-    name: "Windows",
-    icon: "\uD83E\uDE9F",
-    version: "Windows 10 or later",
-    arch: "64-bit",
-    fileName: `ZapTask-${VERSION}-Setup.exe`,
-    primary: false,
-  },
-];
-
 function getDownloadUrl(fileName: string): string {
   return `https://github.com/${GITHUB_REPO}/releases/latest/download/${encodeURIComponent(fileName)}`;
 }
@@ -67,41 +40,70 @@ export default function DownloadPage() {
             </div>
           </FadeIn>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-            {platforms.map((platform, i) => (
-              <FadeIn key={platform.name} staggerIndex={i} staggerDelay={0.15}>
-                <div
-                  className={`p-8 rounded-2xl border-2 transition-all duration-200 hover:scale-[1.02] h-full ${
-                    platform.primary
-                      ? "border-zap bg-gradient-to-b from-zap-bg to-white shadow-lg shadow-zap/10"
-                      : "border-border bg-white hover:shadow-lg"
-                  }`}
-                >
-                  <div className="text-4xl mb-4">{platform.icon}</div>
-                  <h2 className="text-xl font-bold text-foreground mb-1">
-                    {platform.name}
-                  </h2>
-                  <p className="text-sm text-gray-500 mb-1">
-                    {platform.version}
-                  </p>
-                  <p className="text-xs text-gray-400 mb-6">{platform.arch}</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
+            {/* macOS card */}
+            <FadeIn staggerIndex={0} staggerDelay={0.15}>
+              <div className="p-8 rounded-2xl border-2 border-zap bg-gradient-to-b from-zap-bg to-white shadow-lg shadow-zap/10 transition-all duration-200 hover:scale-[1.02] h-full">
+                <div className="text-4xl mb-4">{"\uD83C\uDF4E"}</div>
+                <h2 className="text-xl font-bold text-foreground mb-1">
+                  macOS
+                </h2>
+                <p className="text-sm text-gray-500 mb-1">
+                  macOS 12 (Monterey) or later
+                </p>
+                <p className="text-xs text-gray-400 mb-6">
+                  Apple Silicon &amp; Intel
+                </p>
 
+                <div className="flex gap-3">
                   <Link
-                    href={getDownloadUrl(platform.fileName)}
-                    className={`block w-full py-3 rounded-full font-semibold text-sm text-center transition-colors ${
-                      platform.primary
-                        ? "bg-zap text-white hover:bg-zap-dark"
-                        : "bg-foreground text-white hover:bg-gray-800"
-                    }`}
+                    href={getDownloadUrl("ZapTask-arm64.dmg")}
+                    className="flex-1 py-3 rounded-full font-semibold text-sm text-center transition-colors bg-zap text-white hover:bg-zap-dark"
                   >
-                    Download for {platform.name}
+                    Apple Silicon
+                    <span className="block text-xs font-normal opacity-80">
+                      M1, M2, M3, M4
+                    </span>
                   </Link>
-                  <p className="text-xs text-gray-400 text-center mt-3">
-                    v{VERSION} &middot; {platform.fileName}
-                  </p>
+                  <Link
+                    href={getDownloadUrl("ZapTask-x64.dmg")}
+                    className="flex-1 py-3 rounded-full font-semibold text-sm text-center transition-colors bg-foreground text-white hover:bg-gray-800"
+                  >
+                    Intel
+                    <span className="block text-xs font-normal opacity-80">
+                      x86_64
+                    </span>
+                  </Link>
                 </div>
-              </FadeIn>
-            ))}
+                <p className="text-xs text-gray-400 text-center mt-3">
+                  v{VERSION} &middot; .dmg
+                </p>
+              </div>
+            </FadeIn>
+
+            {/* Windows card */}
+            <FadeIn staggerIndex={1} staggerDelay={0.15}>
+              <div className="p-8 rounded-2xl border-2 border-border bg-white hover:shadow-lg transition-all duration-200 hover:scale-[1.02] h-full">
+                <div className="text-4xl mb-4">{"\uD83E\uDE9F"}</div>
+                <h2 className="text-xl font-bold text-foreground mb-1">
+                  Windows
+                </h2>
+                <p className="text-sm text-gray-500 mb-1">
+                  Windows 10 or later
+                </p>
+                <p className="text-xs text-gray-400 mb-6">64-bit</p>
+
+                <Link
+                  href={getDownloadUrl(`ZapTask-${VERSION}-Setup.exe`)}
+                  className="block w-full py-3 rounded-full font-semibold text-sm text-center transition-colors bg-foreground text-white hover:bg-gray-800"
+                >
+                  Download for Windows
+                </Link>
+                <p className="text-xs text-gray-400 text-center mt-3">
+                  v{VERSION} &middot; ZapTask-{VERSION}-Setup.exe
+                </p>
+              </div>
+            </FadeIn>
           </div>
 
           {/* All releases link */}

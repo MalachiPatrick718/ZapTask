@@ -6,7 +6,7 @@ const footerLinks = {
     { label: "Features", href: "/#features" },
     { label: "Pricing", href: "/pricing" },
     { label: "Download", href: "/download" },
-    { label: "Support", href: "mailto:support@zaptask.io" },
+    { label: "Contact", href: "/contact" },
   ],
   Legal: [
     { label: "Privacy Policy", href: "/privacy" },
