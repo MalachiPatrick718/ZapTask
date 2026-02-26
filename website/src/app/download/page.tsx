@@ -14,12 +14,20 @@ const VERSION = "0.1.0";
 
 const platforms = [
   {
-    name: "macOS",
+    name: "macOS (Apple Silicon)",
     icon: "\uD83C\uDF4E",
     version: "macOS 12 (Monterey) or later",
-    arch: "Apple Silicon & Intel",
-    fileName: "ZapTask.dmg",
+    arch: "M1, M2, M3, M4",
+    fileName: "ZapTask-arm64.dmg",
     primary: true,
+  },
+  {
+    name: "macOS (Intel)",
+    icon: "\uD83C\uDF4E",
+    version: "macOS 12 (Monterey) or later",
+    arch: "Intel x86_64",
+    fileName: "ZapTask-x64.dmg",
+    primary: false,
   },
   {
     name: "Windows",
@@ -59,7 +67,7 @@ export default function DownloadPage() {
             </div>
           </FadeIn>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
             {platforms.map((platform, i) => (
               <FadeIn key={platform.name} staggerIndex={i} staggerDelay={0.15}>
                 <div
