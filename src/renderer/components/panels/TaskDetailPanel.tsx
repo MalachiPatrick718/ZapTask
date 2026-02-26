@@ -303,6 +303,76 @@ export function TaskDetailPanel() {
           </p>
         )}
 
+        {/* Calendar event details */}
+        {task.startTime && (
+          <div style={{
+            padding: '10px 12px',
+            background: 'color-mix(in srgb, #4285F4 6%, var(--surface))',
+            border: '1px solid color-mix(in srgb, #4285F4 20%, var(--border))',
+            borderRadius: 'var(--radius-md)',
+            marginBottom: 16,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+          }}>
+            {/* Event time */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 14 }}>{'\uD83D\uDD52'}</span>
+              <span style={{ fontSize: 13, fontFamily: 'var(--font-mono)', color: 'var(--text1)' }}>
+                {(() => {
+                  const s = new Date(task.startTime!);
+                  const fmtTime = (d: Date) => {
+                    const h = d.getHours(), m = d.getMinutes();
+                    const period = h >= 12 ? 'pm' : 'am';
+                    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+                    return `${h12}:${String(m).padStart(2, '0')}${period}`;
+                  };
+                  const timeStr = fmtTime(s);
+                  if (task.endTime) {
+                    const e = new Date(task.endTime);
+                    return `${timeStr} \u2013 ${fmtTime(e)}`;
+                  }
+                  return timeStr;
+                })()}
+              </span>
+            </div>
+
+            {/* Location */}
+            {task.location && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 14 }}>{'\uD83D\uDCCD'}</span>
+                <span style={{ fontSize: 13, color: 'var(--text2)' }}>
+                  {task.location}
+                </span>
+              </div>
+            )}
+
+            {/* Conference link */}
+            {task.conferenceUrl && (
+              <button
+                onClick={() => window.zaptask.openUrl(task.conferenceUrl!)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '8px 14px',
+                  background: 'var(--teal)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  width: '100%',
+                  justifyContent: 'center',
+                }}
+              >
+                {'\uD83C\uDFA5'} Join Meeting
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Fields */}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {/* Status */}
@@ -430,6 +500,40 @@ export function TaskDetailPanel() {
                 : '\uD83D\uDCC5 Set due date'}
             </button>
           </InlineField>
+
+          {/* Repeat — recurrence rule chips */}
+          <InlineField label="Repeat">
+            {([
+              { value: null, label: 'None' },
+              { value: 'daily', label: 'Daily' },
+              { value: 'weekdays', label: 'Wkdays' },
+              { value: 'weekly', label: 'Weekly' },
+              { value: 'biweekly', label: '2-Wk' },
+              { value: 'monthly', label: 'Monthly' },
+            ] as { value: Task['recurrenceRule']; label: string }[]).map((opt) => (
+              <button
+                key={opt.label}
+                onClick={() => saveField({ recurrenceRule: opt.value })}
+                style={chipStyle(task.recurrenceRule === opt.value, opt.value ? '#8B5CF6' : undefined)}
+              >
+                {opt.value ? '\uD83D\uDD01 ' : ''}{opt.label}
+              </button>
+            ))}
+          </InlineField>
+
+          {task.recurrenceRule && task.status !== 'done' && (
+            <div style={{
+              padding: '6px 10px',
+              background: 'color-mix(in srgb, #8B5CF6 6%, var(--surface))',
+              border: '1px solid color-mix(in srgb, #8B5CF6 15%, var(--border))',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: 11,
+              color: '#8B5CF6',
+              fontFamily: 'var(--font-mono)',
+            }}>
+              {'\uD83D\uDD01'} Next task will be created when this one is completed
+            </div>
+          )}
 
           {/* Category — toggle */}
           <InlineField label="Category">

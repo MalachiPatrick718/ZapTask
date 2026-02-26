@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { format as fmtDate } from 'date-fns';
 import type {
   Task,
   TaskSource,
@@ -10,6 +11,7 @@ import type {
   Subscription,
 } from '../../shared/types';
 import { DEFAULT_ENERGY_PROFILE } from '../../shared/types';
+import { createNextRecurringTask } from '../services/recurrence';
 
 // === View & Panel types ===
 export type ActiveView = 'tasks' | 'suggested' | 'day';
@@ -160,8 +162,11 @@ export const useStore = create<ZapStore>()(
       tasks: [],
       setTasks: (tasks) => set({ tasks }),
       addTask: (task) => set((s) => ({ tasks: [...s.tasks, task] })),
-      updateTask: (id, changes) => set((s) => {
+      updateTask: (id, changes) => {
+        const s = useStore.getState();
         const oldTask = s.tasks.find((t) => t.id === id);
+        const updatedTask = oldTask ? { ...oldTask, ...changes, updatedAt: new Date().toISOString() } : null;
+
         const newState: Partial<ZapStore> = {
           tasks: s.tasks.map((t) => t.id === id ? { ...t, ...changes, updatedAt: new Date().toISOString() } : t),
         };
@@ -171,8 +176,24 @@ export const useStore = create<ZapStore>()(
             (b) => !(b.taskId === id && b.date !== changes.dueDate),
           );
         }
-        return newState;
-      }),
+
+        set(newState);
+
+        // Auto-generate next recurring task when marked done
+        if (changes.status === 'done' && updatedTask?.recurrenceRule) {
+          const nextTask = createNextRecurringTask(updatedTask);
+          // Persist via IPC then add to store
+          window.zaptask.tasks.create(nextTask).then((result: any) => {
+            if (result.success) {
+              useStore.getState().addTask(nextTask);
+              const dueFmt = fmtDate(new Date(nextTask.dueDate + 'T00:00:00'), 'MMM d');
+              useStore.getState().addToast(`Next occurrence created \u2014 due ${dueFmt}`, 'success');
+            }
+          }).catch(() => {
+            useStore.getState().addToast('Failed to create next recurring task', 'error');
+          });
+        }
+      },
       deleteTask: (id) => set((s) => ({
         tasks: s.tasks.filter((t) => t.id !== id),
         // Also remove any schedule blocks for the deleted task

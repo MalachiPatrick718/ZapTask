@@ -35,6 +35,8 @@ export class AppleCalService implements IntegrationService {
         endTime: `${tomorrow}T08:00:00`,
         location: 'Downtown Gym',
         conferenceUrl: null,
+        recurrenceRule: null,
+        recurrenceParentId: null,
       },
     ];
   }

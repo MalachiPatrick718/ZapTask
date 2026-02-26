@@ -494,6 +494,106 @@ export function DayView() {
               );
             })}
 
+            {/* Calendar event blocks */}
+            {calendarEvents.map((event) => {
+              if (!event.startTime) return null;
+              const eventStart = new Date(event.startTime);
+              const eventEnd = event.endTime ? new Date(event.endTime) : new Date(eventStart.getTime() + 60 * 60 * 1000);
+              const startH = eventStart.getHours() + eventStart.getMinutes() / 60;
+              const endH = eventEnd.getHours() + eventEnd.getMinutes() / 60;
+              const startOffset = (startH - startHour) * HOUR_HEIGHT;
+              const duration = (endH - startH) * HOUR_HEIGHT;
+              const minHeight = 56;
+
+              const formatTime = (d: Date) => {
+                const h = d.getHours();
+                const m = d.getMinutes();
+                const period = h >= 12 ? 'pm' : 'am';
+                const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+                return `${h12}:${String(m).padStart(2, '0')}${period}`;
+              };
+
+              return (
+                <div
+                  key={event.id}
+                  style={{
+                    position: 'absolute',
+                    top: startOffset,
+                    left: 0,
+                    right: 0,
+                    height: Math.max(duration, minHeight),
+                    display: 'flex',
+                    background: 'color-mix(in srgb, #4285F4 8%, var(--surface))',
+                    border: '1px solid color-mix(in srgb, #4285F4 30%, var(--border))',
+                    borderRadius: 'var(--radius-md)',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    zIndex: 2,
+                    transition: 'box-shadow 150ms ease',
+                  }}
+                  onClick={() => {
+                    selectTask(event.id);
+                    setActivePanel('taskDetail');
+                  }}
+                >
+                  {/* Left accent bar — blue for calendar */}
+                  <div style={{ width: 4, background: '#4285F4', flexShrink: 0 }} />
+
+                  <div style={{
+                    flex: 1,
+                    padding: '8px 10px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    minWidth: 0,
+                    gap: 2,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                      <span style={{ fontSize: 14, flexShrink: 0 }}>{'\uD83D\uDCC5'}</span>
+                      <div style={{
+                        fontSize: 13, fontWeight: 600, color: 'var(--text1)',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        flex: 1,
+                      }}>
+                        {event.title}
+                      </div>
+                      {event.conferenceUrl && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); window.zaptask.openUrl(event.conferenceUrl!); }}
+                          title="Join meeting"
+                          style={{
+                            padding: '2px 8px',
+                            background: 'color-mix(in srgb, var(--teal) 15%, transparent)',
+                            border: '1px solid color-mix(in srgb, var(--teal) 30%, var(--border))',
+                            borderRadius: 'var(--radius-sm)',
+                            color: 'var(--teal)',
+                            fontSize: 11,
+                            fontFamily: 'var(--font-mono)',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {'\uD83C\uDFA5'} Join
+                        </button>
+                      )}
+                    </div>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text3)',
+                    }}>
+                      <span>{formatTime(eventStart)} {'\u2013'} {formatTime(eventEnd)}</span>
+                      {event.location && (
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {'\uD83D\uDCCD'} {event.location}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
             {/* Now line */}
             {showNowLine && (
               <div style={{

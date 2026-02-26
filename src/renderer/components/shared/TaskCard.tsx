@@ -221,6 +221,13 @@ export function TaskCard({ task, onClick, onStatusChange, onAddToDay, onStartPom
             </span>
           )}
 
+          {task.recurrenceRule && (
+            <span style={pillStyle('#8B5CF6', 'rgba(139, 92, 246, 0.12)')}>
+              {'\uD83D\uDD01'} {task.recurrenceRule === 'weekdays' ? 'Weekdays'
+                : task.recurrenceRule.charAt(0).toUpperCase() + task.recurrenceRule.slice(1)}
+            </span>
+          )}
+
           {task.dueDate && (
             <span style={{
               marginLeft: 'auto',

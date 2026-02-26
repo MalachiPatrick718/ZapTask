@@ -55,6 +55,8 @@ export class OutlookService implements IntegrationService {
           endTime: event.end?.dateTime || null,
           location: event.location?.displayName || null,
           conferenceUrl: event.onlineMeeting?.joinUrl || null,
+          recurrenceRule: null,
+          recurrenceParentId: null,
         } satisfies Task;
       });
     } catch (err) {
@@ -76,6 +78,7 @@ export class OutlookService implements IntegrationService {
         notes: [], createdAt: now, updatedAt: now, syncedAt: now,
         startTime: `${today}T10:00:00`, endTime: `${today}T10:30:00`,
         location: null, conferenceUrl: 'https://teams.microsoft.com/l/meetup-join/abc123',
+        recurrenceRule: null, recurrenceParentId: null,
       },
     ];
   }

@@ -32,6 +32,9 @@ export interface Task {
   endTime: string | null;      // ISO datetime (actual event end)
   location: string | null;     // Event location text
   conferenceUrl: string | null; // Zoom/Meet/Teams join link
+  // Recurrence
+  recurrenceRule: 'daily' | 'weekdays' | 'weekly' | 'biweekly' | 'monthly' | null;
+  recurrenceParentId: string | null; // links to original recurring task for lineage
   createdAt: string; // ISO datetime
   updatedAt: string; // ISO datetime
   syncedAt: string | null; // ISO datetime

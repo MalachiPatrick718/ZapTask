@@ -22,6 +22,7 @@ export function AddTaskPanel() {
   const [estMinutes, setEstMinutes] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [tags, setTags] = useState('');
+  const [recurrenceRule, setRecurrenceRule] = useState<Task['recurrenceRule']>(null);
   const [showDueDatePicker, setShowDueDatePicker] = useState(false);
 
   const canSave = title.trim().length > 0 && energyRequired !== null && canAddTask();
@@ -57,6 +58,8 @@ export function AddTaskPanel() {
       endTime: null,
       location: null,
       conferenceUrl: null,
+      recurrenceRule,
+      recurrenceParentId: null,
     };
 
     try {
@@ -277,6 +280,43 @@ export function AddTaskPanel() {
               </span>
               <span>{'\uD83D\uDCC5'}</span>
             </button>
+          </div>
+        </div>
+
+        {/* Repeat */}
+        <div>
+          <label style={labelStyle}>Repeat</label>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {([
+              { value: null, label: 'None' },
+              { value: 'daily', label: 'Daily' },
+              { value: 'weekdays', label: 'Weekdays' },
+              { value: 'weekly', label: 'Weekly' },
+              { value: 'biweekly', label: 'Biweekly' },
+              { value: 'monthly', label: 'Monthly' },
+            ] as { value: Task['recurrenceRule']; label: string }[]).map((opt) => (
+              <button
+                key={opt.label}
+                onClick={() => setRecurrenceRule(opt.value)}
+                style={{
+                  padding: '6px 10px',
+                  background: recurrenceRule === opt.value
+                    ? opt.value ? 'color-mix(in srgb, #8B5CF6 15%, transparent)' : 'var(--surface-high)'
+                    : 'var(--surface)',
+                  color: recurrenceRule === opt.value
+                    ? opt.value ? '#8B5CF6' : 'var(--text1)'
+                    : 'var(--text3)',
+                  border: `1px solid ${recurrenceRule === opt.value
+                    ? opt.value ? '#8B5CF6' : 'var(--border-glow)'
+                    : 'var(--border)'}`,
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: 11, cursor: 'pointer',
+                  fontFamily: 'var(--font-mono)',
+                }}
+              >
+                {opt.value ? '\uD83D\uDD01 ' : ''}{opt.label}
+              </button>
+            ))}
           </div>
         </div>
 

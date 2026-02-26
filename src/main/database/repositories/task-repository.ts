@@ -24,6 +24,8 @@ interface TaskRow {
   end_time: string | null;
   location: string | null;
   conference_url: string | null;
+  recurrence_rule: string | null;
+  recurrence_parent_id: string | null;
 }
 
 function rowToTask(row: TaskRow): Task {
@@ -49,6 +51,8 @@ function rowToTask(row: TaskRow): Task {
     endTime: row.end_time,
     location: row.location,
     conferenceUrl: row.conference_url,
+    recurrenceRule: row.recurrence_rule as Task['recurrenceRule'],
+    recurrenceParentId: row.recurrence_parent_id,
   };
 }
 
@@ -75,6 +79,8 @@ function taskToParams(task: Task) {
     end_time: task.endTime,
     location: task.location,
     conference_url: task.conferenceUrl,
+    recurrence_rule: task.recurrenceRule,
+    recurrence_parent_id: task.recurrenceParentId,
   };
 }
 
@@ -97,12 +103,14 @@ export class TaskRepository {
         id, title, description, source, source_id, source_url,
         category, status, priority, energy_required,
         estimated_minutes, due_date, tags, notes, created_at, updated_at, synced_at,
-        start_time, end_time, location, conference_url
+        start_time, end_time, location, conference_url,
+        recurrence_rule, recurrence_parent_id
       ) VALUES (
         @id, @title, @description, @source, @source_id, @source_url,
         @category, @status, @priority, @energy_required,
         @estimated_minutes, @due_date, @tags, @notes, @created_at, @updated_at, @synced_at,
-        @start_time, @end_time, @location, @conference_url
+        @start_time, @end_time, @location, @conference_url,
+        @recurrence_rule, @recurrence_parent_id
       )
     `);
 
@@ -115,7 +123,8 @@ export class TaskRepository {
         due_date = @due_date, tags = @tags, notes = @notes,
         updated_at = @updated_at, synced_at = @synced_at,
         start_time = @start_time, end_time = @end_time,
-        location = @location, conference_url = @conference_url
+        location = @location, conference_url = @conference_url,
+        recurrence_rule = @recurrence_rule, recurrence_parent_id = @recurrence_parent_id
       WHERE id = @id
     `);
 

@@ -60,6 +60,8 @@ export class GCalService implements IntegrationService {
           endTime: event.end?.dateTime || null,
           location: event.location || null,
           conferenceUrl,
+          recurrenceRule: null,
+          recurrenceParentId: null,
         } satisfies Task;
       });
     } catch (err) {
@@ -82,6 +84,7 @@ export class GCalService implements IntegrationService {
         notes: [], createdAt: now, updatedAt: now, syncedAt: now,
         startTime: `${today}T09:00:00`, endTime: `${today}T09:15:00`,
         location: null, conferenceUrl: 'https://meet.google.com/abc-defg-hij',
+        recurrenceRule: null, recurrenceParentId: null,
       },
       {
         id: 'gcal-002', title: 'Dentist appointment',
@@ -92,6 +95,7 @@ export class GCalService implements IntegrationService {
         notes: [], createdAt: now, updatedAt: now, syncedAt: now,
         startTime: `${tomorrow}T14:00:00`, endTime: `${tomorrow}T15:00:00`,
         location: '123 Main St, Suite 200', conferenceUrl: null,
+        recurrenceRule: null, recurrenceParentId: null,
       },
     ];
   }

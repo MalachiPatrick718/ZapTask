@@ -13,8 +13,8 @@ const plans = [
     features: [
       "Up to 10 active tasks",
       "1 integration",
-      "Energy-aware scheduling",
-      "Day planner timeline",
+      "Timeboxing",
+      "Desktop widget",
     ],
     cta: "Download Free",
     href: "/download",
@@ -27,7 +27,8 @@ const plans = [
     description: "Unlimited power for professionals",
     features: [
       "Unlimited tasks",
-      "All 6 integrations",
+      "Unlimited integrations",
+      "Energy-aware scheduling",
       "Pomodoro timer",
       "Day summary export",
       "Priority support",

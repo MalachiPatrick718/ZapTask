@@ -68,7 +68,7 @@ export class JiraService implements IntegrationService {
           createdAt: now,
           updatedAt: fields.updated || now,
           syncedAt: now,
-          startTime: null, endTime: null, location: null, conferenceUrl: null,
+          startTime: null, endTime: null, location: null, conferenceUrl: null, recurrenceRule: null, recurrenceParentId: null,
         } satisfies Task;
       });
     } catch (err) {
@@ -89,7 +89,7 @@ export class JiraService implements IntegrationService {
         category: 'work', status: 'todo', priority: 'high', energyRequired: null,
         estimatedMinutes: 45, dueDate: tomorrow, tags: ['frontend', 'bug'],
         notes: [], createdAt: now, updatedAt: now, syncedAt: now,
-        startTime: null, endTime: null, location: null, conferenceUrl: null,
+        startTime: null, endTime: null, location: null, conferenceUrl: null, recurrenceRule: null, recurrenceParentId: null,
       },
       {
         id: 'jira-002', title: '[PROJ-138] Add dark mode support',
@@ -98,7 +98,7 @@ export class JiraService implements IntegrationService {
         category: 'work', status: 'in_progress', priority: 'medium', energyRequired: null,
         estimatedMinutes: 120, dueDate: nextWeek, tags: ['frontend', 'feature'],
         notes: [], createdAt: now, updatedAt: now, syncedAt: now,
-        startTime: null, endTime: null, location: null, conferenceUrl: null,
+        startTime: null, endTime: null, location: null, conferenceUrl: null, recurrenceRule: null, recurrenceParentId: null,
       },
       {
         id: 'jira-003', title: '[PROJ-155] Update API documentation',
@@ -107,7 +107,7 @@ export class JiraService implements IntegrationService {
         category: 'work', status: 'todo', priority: 'low', energyRequired: null,
         estimatedMinutes: 30, dueDate: null, tags: ['docs'],
         notes: [], createdAt: now, updatedAt: now, syncedAt: now,
-        startTime: null, endTime: null, location: null, conferenceUrl: null,
+        startTime: null, endTime: null, location: null, conferenceUrl: null, recurrenceRule: null, recurrenceParentId: null,
       },
     ];
   }

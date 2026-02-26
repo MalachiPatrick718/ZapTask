@@ -9,11 +9,11 @@ export const metadata: Metadata = {
 
 const features = [
   { name: "Local task management", free: true, pro: true },
-  { name: "Energy-aware scheduling", free: true, pro: true },
-  { name: "Day planner timeline", free: true, pro: true },
+  { name: "Timeboxing", free: true, pro: true },
   { name: "Desktop widget", free: true, pro: true },
   { name: "Active tasks", free: "Up to 10", pro: "Unlimited" },
-  { name: "Integrations", free: "1", pro: "All 6" },
+  { name: "Integrations", free: "1", pro: "Unlimited" },
+  { name: "Energy-aware scheduling", free: false, pro: true },
   { name: "Pomodoro timer", free: false, pro: true },
   { name: "Day summary export", free: false, pro: true },
   { name: "Priority support", free: false, pro: true },

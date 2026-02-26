@@ -47,5 +47,12 @@ export function getInlineMigrations(): Migration[] {
         ALTER TABLE tasks ADD COLUMN conference_url TEXT;
       `,
     },
+    {
+      name: '004_add_recurrence_fields',
+      sql: `
+        ALTER TABLE tasks ADD COLUMN recurrence_rule TEXT;
+        ALTER TABLE tasks ADD COLUMN recurrence_parent_id TEXT;
+      `,
+    },
   ];
 }

@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   title: "ZapTask — Work with your energy, not against it.",
   description:
     "ZapTask pulls tasks from Jira, Asana, Monday.com, Notion, Google Calendar, Outlook, and more into one desktop widget. Plan your day with energy-aware scheduling.",
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+  },
   openGraph: {
     title: "ZapTask — Work with your energy, not against it.",
     description:

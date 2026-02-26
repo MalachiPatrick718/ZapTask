@@ -45,7 +45,7 @@ export class AsanaService implements IntegrationService {
         createdAt: now,
         updatedAt: now,
         syncedAt: now,
-        startTime: null, endTime: null, location: null, conferenceUrl: null,
+        startTime: null, endTime: null, location: null, conferenceUrl: null, recurrenceRule: null, recurrenceParentId: null,
       } satisfies Task));
     } catch (err) {
       console.error('[Asana] API error:', err);
@@ -65,7 +65,7 @@ export class AsanaService implements IntegrationService {
         category: 'work', status: 'todo', priority: 'medium', energyRequired: null,
         estimatedMinutes: 30, dueDate: inTwoDays, tags: ['design'],
         notes: [], createdAt: now, updatedAt: now, syncedAt: now,
-        startTime: null, endTime: null, location: null, conferenceUrl: null,
+        startTime: null, endTime: null, location: null, conferenceUrl: null, recurrenceRule: null, recurrenceParentId: null,
       },
     ];
   }
