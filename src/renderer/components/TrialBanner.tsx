@@ -1,108 +1,74 @@
-import { useState } from 'react';
 import { useSubscription } from '../hooks/useSubscription';
 
-export function TrialBanner() {
+/**
+ * Small pill shown in the title bar next to "ZapTask".
+ * Not dismissable — always visible for non-Pro users.
+ * Clicking opens the pricing modal.
+ */
+export function TrialPill() {
   const { tier, isTrialActive, isTrialExpired, daysRemaining, isPro } = useSubscription();
-  const [dismissed, setDismissed] = useState(false);
 
-  // Don't show for Pro users
-  if (isPro) return null;
+  // Pro users: subtle badge, no action needed
+  if (isPro) {
+    return (
+      <span style={{
+        fontSize: 9,
+        fontFamily: 'var(--font-mono)',
+        fontWeight: 600,
+        color: 'var(--accent)',
+        background: 'var(--accent-dim)',
+        padding: '1px 6px',
+        borderRadius: 8,
+        letterSpacing: '0.03em',
+      }}>
+        PRO
+      </span>
+    );
+  }
 
-  // Dismissable during trial (comes back on remount / next session)
-  if (isTrialActive && dismissed) return null;
+  let label: string;
+  let color: string;
+  let bg: string;
 
-  // Free tier (never trialed or after expiry) — subtle prompt
-  const isFreeUser = tier === 'free' && !isTrialExpired;
-
-  // Nothing to show if somehow none of the states match
-  if (!isTrialActive && !isTrialExpired && !isFreeUser) return null;
-
-  const isUrgent = isTrialExpired || (isTrialActive && daysRemaining <= 3);
-
-  const bgColor = isUrgent
-    ? 'color-mix(in srgb, var(--red) 10%, var(--surface))'
-    : isFreeUser
-      ? 'var(--surface)'
-      : 'color-mix(in srgb, var(--accent) 10%, var(--surface))';
-
-  const borderColor = isUrgent
-    ? 'color-mix(in srgb, var(--red) 25%, var(--border))'
-    : isFreeUser
-      ? 'var(--border)'
-      : 'color-mix(in srgb, var(--accent) 25%, var(--border))';
-
-  const textColor = isUrgent
-    ? 'var(--red)'
-    : isFreeUser
-      ? 'var(--text3)'
-      : 'var(--text2)';
-
-  let icon: string;
-  let message: string;
-
-  if (isTrialExpired) {
-    icon = '\uD83D\uDD12';
-    message = 'Trial ended \u2014 some features are now limited';
-  } else if (isTrialActive) {
-    icon = '\u2728';
-    message = `Pro Trial \u2014 ${daysRemaining} day${daysRemaining !== 1 ? 's' : ''} left`;
+  if (isTrialActive) {
+    const urgent = daysRemaining <= 3;
+    label = `${daysRemaining}d trial`;
+    color = urgent ? 'var(--red)' : 'var(--text3)';
+    bg = urgent
+      ? 'color-mix(in srgb, var(--red) 12%, transparent)'
+      : 'color-mix(in srgb, var(--accent) 10%, transparent)';
+  } else if (isTrialExpired) {
+    label = 'Trial ended';
+    color = 'var(--red)';
+    bg = 'color-mix(in srgb, var(--red) 12%, transparent)';
+  } else if (tier === 'free') {
+    label = 'Free';
+    color = 'var(--text3)';
+    bg = 'var(--surface)';
   } else {
-    icon = '\u2728';
-    message = 'Free plan \u2014 upgrade to unlock all features';
+    return null;
   }
 
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: 8,
-      padding: '6px 12px',
-      background: bgColor,
-      borderBottom: `1px solid ${borderColor}`,
-      fontSize: 12,
-      fontFamily: 'var(--font-mono)',
-      flexShrink: 0,
-    }}>
-      <span style={{ fontSize: 14 }}>{icon}</span>
-
-      <span style={{ flex: 1, color: textColor }}>
-        {message}
-      </span>
-
-      <button
-        onClick={() => window.dispatchEvent(new CustomEvent('zaptask:showPricing'))}
-        style={{
-          padding: '3px 10px',
-          background: 'var(--accent)',
-          color: '#fff',
-          border: 'none',
-          borderRadius: 'var(--radius-sm)',
-          fontSize: 11,
-          fontWeight: 600,
-          cursor: 'pointer',
-          flexShrink: 0,
-        }}
-      >
-        Upgrade
-      </button>
-
-      {isTrialActive && (
-        <button
-          onClick={() => setDismissed(true)}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--text3)',
-            fontSize: 14,
-            cursor: 'pointer',
-            padding: '0 2px',
-            lineHeight: 1,
-            flexShrink: 0,
-          }}
-        >
-          {'\u2715'}
-        </button>
-      )}
-    </div>
+    <button
+      className="no-drag"
+      onClick={() => window.dispatchEvent(new CustomEvent('zaptask:showPricing'))}
+      title="View plans"
+      style={{
+        fontSize: 9,
+        fontFamily: 'var(--font-mono)',
+        fontWeight: 600,
+        color,
+        background: bg,
+        padding: '1px 6px',
+        borderRadius: 8,
+        border: 'none',
+        cursor: 'pointer',
+        letterSpacing: '0.03em',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {label}
+    </button>
   );
 }

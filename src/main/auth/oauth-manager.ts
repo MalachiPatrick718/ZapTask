@@ -27,12 +27,17 @@ function cleanStaleFlows(): void {
   }
 }
 
+const CLIENT_CREDENTIALS: Record<string, { clientId: string; clientSecret: string }> = {
+  jira: { clientId: process.env.JIRA_CLIENT_ID || '', clientSecret: process.env.JIRA_CLIENT_SECRET || '' },
+  asana: { clientId: process.env.ASANA_CLIENT_ID || '', clientSecret: process.env.ASANA_CLIENT_SECRET || '' },
+  notion: { clientId: process.env.NOTION_CLIENT_ID || '', clientSecret: process.env.NOTION_CLIENT_SECRET || '' },
+  monday: { clientId: process.env.MONDAY_CLIENT_ID || '', clientSecret: process.env.MONDAY_CLIENT_SECRET || '' },
+  gcal: { clientId: process.env.GCAL_CLIENT_ID || '', clientSecret: process.env.GCAL_CLIENT_SECRET || '' },
+  outlook: { clientId: process.env.OUTLOOK_CLIENT_ID || '', clientSecret: process.env.OUTLOOK_CLIENT_SECRET || '' },
+};
+
 function getClientCredentials(toolId: string): { clientId: string; clientSecret: string } {
-  const prefix = toolId.toUpperCase();
-  return {
-    clientId: process.env[`${prefix}_CLIENT_ID`] || '',
-    clientSecret: process.env[`${prefix}_CLIENT_SECRET`] || '',
-  };
+  return CLIENT_CREDENTIALS[toolId] || { clientId: '', clientSecret: '' };
 }
 
 /**
@@ -45,7 +50,7 @@ export function startOAuthFlow(toolId: string): { state: string } {
   if (!config) throw new Error(`Unknown OAuth provider: ${toolId}`);
 
   const { clientId } = getClientCredentials(toolId);
-  if (!clientId) throw new Error(`Missing ${toolId.toUpperCase()}_CLIENT_ID in environment`);
+  if (!clientId) throw new Error(`${toolId.charAt(0).toUpperCase() + toolId.slice(1)} integration is not configured yet`);
 
   const state = generateState();
   let codeVerifier: string | null = null;

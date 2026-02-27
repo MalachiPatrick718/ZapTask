@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useStore } from '../store';
+import { TrialPill } from './TrialBanner';
 
 export function TitleBar() {
   const [pinned, setPinned] = useState(true);
@@ -41,30 +42,36 @@ export function TitleBar() {
       }}
     >
       {isSettings ? (
-        <button
-          className="no-drag"
-          onClick={async () => {
-            await window.zaptask.collapseToWidget();
-            setWindowMode('widget');
-          }}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: 'var(--accent)', fontFamily: 'var(--font-display)',
-            fontWeight: 700, fontSize: 16,
-          }}
-        >
-          {'\u2190'} ZapTask
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            className="no-drag"
+            onClick={async () => {
+              await window.zaptask.collapseToWidget();
+              setWindowMode('widget');
+            }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: 'var(--accent)', fontFamily: 'var(--font-display)',
+              fontWeight: 700, fontSize: 16,
+            }}
+          >
+            {'\u2190'} ZapTask
+          </button>
+          <TrialPill />
+        </div>
       ) : (
-        <span style={{
-          fontFamily: 'var(--font-display)',
-          fontWeight: 700,
-          fontSize: 16,
-          color: 'var(--accent)',
-        }}>
-          ZapTask
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: 16,
+            color: 'var(--accent)',
+          }}>
+            ZapTask
+          </span>
+          <TrialPill />
+        </div>
       )}
 
       <div className="no-drag" style={{ display: 'flex', gap: 4 }}>

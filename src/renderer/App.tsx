@@ -9,7 +9,7 @@ import { SuggestedView } from './components/SuggestedView';
 import { DayView } from './components/DayView';
 import { SettingsView } from './components/SettingsView';
 import { PomodoroBar } from './components/PomodoroBar';
-import { TrialBanner } from './components/TrialBanner';
+// TrialPill is now rendered inside TitleBar
 import { PricingModal } from './components/PricingModal';
 import { useStore, type ActiveView } from './store';
 import { useSubscription } from './hooks/useSubscription';
@@ -301,7 +301,6 @@ export function App() {
       overflow: 'hidden',
     }}>
       <TitleBar />
-      <TrialBanner />
       <MainContent />
       <PomodoroBar />
       <BottomNav />

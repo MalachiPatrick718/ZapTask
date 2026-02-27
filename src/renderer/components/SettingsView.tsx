@@ -3,8 +3,8 @@ import { useStore } from '../store';
 import { Btn } from './shared/Btn';
 import { ProBadge } from './shared/UpgradePrompt';
 import { useSubscription } from '../hooks/useSubscription';
-import { DEFAULT_ENERGY_PROFILE } from '../../shared/types';
-import type { EnergyLevel, EnergyProfile } from '../../shared/types';
+import { TOOL_META } from './shared/tool-meta';
+import { EnergyEditor } from './shared/EnergyEditor';
 
 type SettingsTab = 'integrations' | 'energy' | 'preferences' | 'account' | 'support';
 
@@ -15,22 +15,6 @@ const sidebarItems: { id: SettingsTab; label: string; icon: string }[] = [
   { id: 'account', label: 'Account', icon: '\uD83D\uDC64' },
   { id: 'support', label: 'Support', icon: '\u2753' },
 ];
-
-const energyLevels: { value: EnergyLevel; icon: string; label: string; color: string }[] = [
-  { value: 'high', icon: '\u26A1', label: 'High', color: 'var(--energy-high)' },
-  { value: 'medium', icon: '\uD83D\uDD0B', label: 'Medium', color: 'var(--energy-med)' },
-  { value: 'low', icon: '\uD83C\uDF19', label: 'Low', color: 'var(--energy-low)' },
-];
-
-const toolMeta: Record<string, { name: string; color: string; description: string }> = {
-  jira: { name: 'Jira', color: '#2684FF', description: 'Import issues and epics from Jira projects' },
-  asana: { name: 'Asana', color: '#F06A6A', description: 'Sync tasks and projects from Asana' },
-  notion: { name: 'Notion', color: '#999', description: 'Pull tasks from Notion databases' },
-  monday: { name: 'Monday.com', color: '#FF3D57', description: 'Sync items and boards from Monday.com' },
-  gcal: { name: 'Google Calendar', color: '#4285F4', description: 'Import events from Google Calendar' },
-  outlook: { name: 'Outlook', color: '#0078D4', description: 'Sync tasks and events from Outlook' },
-  apple_cal: { name: 'Apple Calendar', color: '#FF3B30', description: 'Import events from Apple Calendar' },
-};
 
 export function SettingsView() {
   const [tab, setTab] = useState<SettingsTab>('integrations');
@@ -116,7 +100,7 @@ function IntegrationsTab() {
     const unsubscribe = window.zaptask.onOAuthCallback((data) => {
       if (data.success && data.toolId) {
         setToolConnected(data.toolId, true, user?.email || '');
-        addToast(`${toolMeta[data.toolId]?.name || data.toolId} connected!`, 'success');
+        addToast(`${TOOL_META[data.toolId]?.name || data.toolId} connected!`, 'success');
         window.zaptask.syncNow(data.toolId).catch(() => {});
       } else if (data.error) {
         addToast(`Connection failed: ${data.error}`, 'error');
@@ -144,7 +128,7 @@ function IntegrationsTab() {
   const handleDisconnect = useCallback(async (toolId: string) => {
     setToolConnected(toolId, false);
     await window.zaptask.clearCredentials(toolId);
-    addToast(`${toolMeta[toolId]?.name || toolId} disconnected`, 'info');
+    addToast(`${TOOL_META[toolId]?.name || toolId} disconnected`, 'info');
   }, [setToolConnected, addToast]);
 
   return (
@@ -165,7 +149,7 @@ function IntegrationsTab() {
         gap: 12,
       }}>
         {tools.map((tool) => {
-          const meta = toolMeta[tool.toolId];
+          const meta = TOOL_META[tool.toolId];
           if (!meta) return null;
           const isAppleCal = tool.toolId === 'apple_cal';
           const isConnecting = connecting === tool.toolId;
@@ -277,117 +261,10 @@ function IntegrationsTab() {
   );
 }
 
-const ENERGY_TEMPLATES: { label: string; profile: EnergyProfile }[] = [
-  {
-    label: 'Morning Person',
-    profile: {
-      blocks: [
-        { id: 'morning', label: 'Morning', start: 6, end: 12, level: 'high' },
-        { id: 'early_afternoon', label: 'Early Afternoon', start: 12, end: 15, level: 'medium' },
-        { id: 'late_afternoon', label: 'Late Afternoon', start: 15, end: 18, level: 'low' },
-        { id: 'evening', label: 'Evening', start: 18, end: 22, level: 'low' },
-      ],
-    },
-  },
-  {
-    label: 'Night Owl',
-    profile: {
-      blocks: [
-        { id: 'morning', label: 'Morning', start: 6, end: 12, level: 'low' },
-        { id: 'early_afternoon', label: 'Early Afternoon', start: 12, end: 15, level: 'medium' },
-        { id: 'late_afternoon', label: 'Late Afternoon', start: 15, end: 18, level: 'high' },
-        { id: 'evening', label: 'Evening', start: 18, end: 22, level: 'high' },
-      ],
-    },
-  },
-  {
-    label: 'Steady',
-    profile: {
-      blocks: [
-        { id: 'morning', label: 'Morning', start: 6, end: 12, level: 'medium' },
-        { id: 'afternoon', label: 'Afternoon', start: 12, end: 18, level: 'medium' },
-        { id: 'evening', label: 'Evening', start: 18, end: 22, level: 'low' },
-      ],
-    },
-  },
-];
-
-const HOURS = Array.from({ length: 19 }, (_, i) => i + 5); // 5am to 11pm
-
-function formatHour(h: number): string {
-  if (h === 0 || h === 24) return '12am';
-  if (h === 12) return '12pm';
-  return h < 12 ? `${h}am` : `${h - 12}pm`;
-}
-
 function EnergyTab() {
   const energyProfile = useStore((s) => s.energyProfile);
   const setEnergyProfile = useStore((s) => s.setEnergyProfile);
   const addToast = useStore((s) => s.addToast);
-
-  const cycleLevel = (blockId: string) => {
-    const order: EnergyLevel[] = ['high', 'medium', 'low'];
-    const newBlocks = energyProfile.blocks.map((b) => {
-      if (b.id !== blockId) return b;
-      const idx = order.indexOf(b.level);
-      return { ...b, level: order[(idx + 1) % order.length] };
-    });
-    setEnergyProfile({ blocks: newBlocks });
-  };
-
-  const updateBlockTime = (blockId: string, field: 'start' | 'end', value: number) => {
-    const newBlocks = energyProfile.blocks.map((b) => {
-      if (b.id !== blockId) return b;
-      return { ...b, [field]: value };
-    });
-    newBlocks.sort((a, b) => a.start - b.start);
-    setEnergyProfile({ blocks: newBlocks });
-  };
-
-  const addBlock = () => {
-    const lastBlock = energyProfile.blocks[energyProfile.blocks.length - 1];
-    const newStart = lastBlock ? lastBlock.end : 6;
-    if (newStart >= 23) {
-      addToast('No more room to add a block', 'error');
-      return;
-    }
-    const newBlock = {
-      id: crypto.randomUUID(),
-      label: 'New Block',
-      start: newStart,
-      end: Math.min(newStart + 2, 23),
-      level: 'medium' as EnergyLevel,
-    };
-    setEnergyProfile({ blocks: [...energyProfile.blocks, newBlock] });
-  };
-
-  const removeBlock = (blockId: string) => {
-    if (energyProfile.blocks.length <= 1) {
-      addToast('Need at least one energy block', 'error');
-      return;
-    }
-    setEnergyProfile({ blocks: energyProfile.blocks.filter((b) => b.id !== blockId) });
-  };
-
-  const updateLabel = (blockId: string, label: string) => {
-    setEnergyProfile({
-      blocks: energyProfile.blocks.map((b) => b.id === blockId ? { ...b, label } : b),
-    });
-  };
-
-  const selectStyle = {
-    padding: '6px 8px',
-    background: 'var(--surface-high)',
-    border: '1px solid var(--border)',
-    borderRadius: 'var(--radius-sm)',
-    color: 'var(--text1)',
-    fontSize: 13,
-    fontFamily: 'var(--font-mono)',
-  };
-
-  const previewStart = 5;
-  const previewEnd = 23;
-  const previewRange = previewEnd - previewStart;
 
   return (
     <div>
@@ -401,167 +278,11 @@ function EnergyTab() {
         Set your energy levels throughout the day to get smarter task suggestions.
       </p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 560 }}>
-        {/* Templates */}
-        <div>
-          <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text3)', marginBottom: 6 }}>
-            Templates
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {ENERGY_TEMPLATES.map((t) => (
-              <Btn
-                key={t.label}
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setEnergyProfile(t.profile);
-                  addToast(`Applied "${t.label}" template`, 'success');
-                }}
-                style={{ flex: 1 }}
-              >
-                {t.label}
-              </Btn>
-            ))}
-          </div>
-        </div>
-
-        {/* Visual preview bar */}
-        <div>
-          <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text3)', marginBottom: 4 }}>
-            Preview
-          </div>
-          <div style={{
-            display: 'flex', height: 24, borderRadius: 'var(--radius-sm)', overflow: 'hidden',
-            border: '1px solid var(--border)',
-          }}>
-            {energyProfile.blocks
-              .filter((b) => b.end > previewStart && b.start < previewEnd)
-              .sort((a, b) => a.start - b.start)
-              .map((block) => {
-                const clampedStart = Math.max(block.start, previewStart);
-                const clampedEnd = Math.min(block.end, previewEnd);
-                const widthPercent = ((clampedEnd - clampedStart) / previewRange) * 100;
-                const levelInfo = energyLevels.find((l) => l.value === block.level)!;
-                return (
-                  <div
-                    key={block.id}
-                    title={`${block.label}: ${formatHour(block.start)}\u2013${formatHour(block.end)} (${levelInfo.label})`}
-                    style={{
-                      width: `${widthPercent}%`,
-                      background: `color-mix(in srgb, ${levelInfo.color} 40%, var(--surface))`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 10, color: levelInfo.color, fontWeight: 600,
-                    }}
-                  >
-                    {widthPercent > 8 ? levelInfo.icon : ''}
-                  </div>
-                );
-              })}
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontFamily: 'var(--font-mono)', color: 'var(--text3)', marginTop: 2 }}>
-            <span>{formatHour(previewStart)}</span>
-            <span>{formatHour(12)}</span>
-            <span>{formatHour(previewEnd)}</span>
-          </div>
-        </div>
-
-        {/* Blocks */}
-        {energyProfile.blocks
-          .slice()
-          .sort((a, b) => a.start - b.start)
-          .map((block) => {
-            const levelInfo = energyLevels.find((l) => l.value === block.level)!;
-            return (
-              <div
-                key={block.id}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '12px 14px',
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-md)',
-                }}
-              >
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <input
-                    type="text"
-                    value={block.label}
-                    onChange={(e) => updateLabel(block.id, e.target.value)}
-                    style={{
-                      background: 'transparent', border: 'none', color: 'var(--text1)',
-                      fontSize: 14, fontWeight: 500, width: '100%', outline: 'none',
-                      padding: 0, marginBottom: 4,
-                    }}
-                  />
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <select
-                      value={block.start}
-                      onChange={(e) => updateBlockTime(block.id, 'start', Number(e.target.value))}
-                      style={selectStyle}
-                    >
-                      {HOURS.map((h) => (
-                        <option key={h} value={h}>{formatHour(h)}</option>
-                      ))}
-                    </select>
-                    <span style={{ color: 'var(--text3)', fontSize: 12 }}>{'\u2013'}</span>
-                    <select
-                      value={block.end}
-                      onChange={(e) => updateBlockTime(block.id, 'end', Number(e.target.value))}
-                      style={selectStyle}
-                    >
-                      {HOURS.map((h) => (
-                        <option key={h} value={h}>{formatHour(h)}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => cycleLevel(block.id)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 4,
-                    padding: '6px 10px', borderRadius: 'var(--radius-sm)',
-                    background: `color-mix(in srgb, ${levelInfo.color} 15%, transparent)`,
-                    color: levelInfo.color, fontSize: 13, fontWeight: 500,
-                    border: 'none', cursor: 'pointer',
-                  }}
-                >
-                  {levelInfo.icon} {levelInfo.label}
-                </button>
-
-                <button
-                  onClick={() => removeBlock(block.id)}
-                  style={{
-                    background: 'none', border: 'none',
-                    color: 'var(--text3)', fontSize: 14,
-                    cursor: 'pointer', padding: '2px 4px',
-                    flexShrink: 0,
-                  }}
-                  title="Remove block"
-                >
-                  {'\u2715'}
-                </button>
-              </div>
-            );
-          })}
-
-        {/* Add block + Reset */}
-        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-          <Btn variant="secondary" size="sm" onClick={addBlock}>
-            + Add Block
-          </Btn>
-          <Btn
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setEnergyProfile(DEFAULT_ENERGY_PROFILE);
-              addToast('Energy profile reset to defaults', 'info');
-            }}
-          >
-            Reset
-          </Btn>
-        </div>
-      </div>
+      <EnergyEditor
+        energyProfile={energyProfile}
+        setEnergyProfile={setEnergyProfile}
+        onToast={(message, type) => addToast(message, type)}
+      />
     </div>
   );
 }
