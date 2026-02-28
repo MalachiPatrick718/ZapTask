@@ -16,7 +16,7 @@ export class NotionService implements IntegrationService {
   }
 
   async fetchTasks(accessToken: string): Promise<Task[]> {
-    if (!accessToken) return this.stubTasks();
+    if (!accessToken) return [];
 
     try {
       // Search for databases that look like task boards
@@ -90,32 +90,7 @@ export class NotionService implements IntegrationService {
       return tasks;
     } catch (err) {
       console.error('[Notion] API error:', err);
-      return this.stubTasks();
+      return [];
     }
-  }
-
-  private stubTasks(): Task[] {
-    const now = new Date().toISOString();
-    const inTwoDays = new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
-    return [
-      {
-        id: 'notion-001', title: 'Q1 OKR review prep',
-        description: 'Prepare slides for quarterly OKR review', source: 'notion',
-        sourceId: 'abc123', sourceUrl: 'https://notion.so/abc123',
-        category: 'work', status: 'todo', priority: 'medium', energyRequired: null,
-        estimatedMinutes: 60, dueDate: inTwoDays, tags: ['planning'],
-        notes: [], createdAt: now, updatedAt: now, syncedAt: now,
-        startTime: null, endTime: null, location: null, conferenceUrl: null, recurrenceRule: null, recurrenceParentId: null,
-      },
-      {
-        id: 'notion-002', title: 'Research competitor pricing',
-        description: null, source: 'notion',
-        sourceId: 'def456', sourceUrl: 'https://notion.so/def456',
-        category: 'work', status: 'todo', priority: 'low', energyRequired: null,
-        estimatedMinutes: 90, dueDate: null, tags: ['research'],
-        notes: [], createdAt: now, updatedAt: now, syncedAt: now,
-        startTime: null, endTime: null, location: null, conferenceUrl: null, recurrenceRule: null, recurrenceParentId: null,
-      },
-    ];
   }
 }

@@ -3,8 +3,9 @@ export const IPC = {
   WINDOW_MINIMIZE: 'window:minimize',
   WINDOW_HIDE: 'window:hide',
   WINDOW_ALWAYS_ON_TOP: 'window:alwaysOnTop',
-  WINDOW_EXPAND_SETTINGS: 'window:expandSettings',
-  WINDOW_COLLAPSE_WIDGET: 'window:collapseWidget',
+  WINDOW_EXPAND: 'window:expand',
+  WINDOW_COLLAPSE: 'window:collapse',
+  WINDOW_TOGGLE_EXPAND: 'window:toggleExpand',
 
   // Shell
   SHELL_OPEN_URL: 'shell:openUrl',
@@ -27,6 +28,7 @@ export const IPC = {
   TASKS_CREATE: 'tasks:create',
   TASKS_UPDATE: 'tasks:update',
   TASKS_DELETE: 'tasks:delete',
+  TASKS_DELETE_BY_SOURCE: 'tasks:deleteBySource',
 
   // Notifications
   NOTIFICATION_SHOW: 'notification:show',
@@ -38,8 +40,9 @@ export const IPC = {
   // Navigation
   NAVIGATE_TO_TASK: 'navigate:toTask',
 
-  // Paddle / Billing
-  PADDLE_GET_CONFIG: 'paddle:getConfig',
+  // License / Billing
+  LICENSE_GET_CONFIG: 'license:getConfig',
+  LICENSE_VALIDATE: 'license:validate',
 
   // Feedback
   FEEDBACK_CAPTURE_SCREENSHOT: 'feedback:captureScreenshot',

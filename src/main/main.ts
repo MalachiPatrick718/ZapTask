@@ -10,13 +10,14 @@ process.on('uncaughtException', (error) => {
 });
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
-import { createWindow, getMainWindow, toggleVisibility } from './window-manager';
+import { createWindow, getMainWindow, toggleVisibility, toggleExpand } from './window-manager';
 import { setupTray, destroyTray } from './tray';
 import { registerIpcHandlers } from './ipc-handlers';
 import { IPC } from '../shared/types/ipc-channels';
 import { syncEngine } from './services/sync-engine';
 import { notificationScheduler } from './services/notification-scheduler';
 import { getDb, closeDb } from './database';
+import { getConnectedToolIds } from './credential-store';
 
 // Handle Squirrel events on Windows
 if (started) app.quit();
@@ -73,9 +74,19 @@ app.whenReady().then(() => {
     toggleVisibility();
   });
 
-  // Start sync engine (stubs for now — will sync connected tools)
-  // syncEngine.setConnectedTools(['jira', 'notion', 'gcal']);
-  // syncEngine.start();
+  globalShortcut.register('CommandOrControl+E', () => {
+    const win = getMainWindow();
+    if (!win || !win.isVisible()) return;
+    const expanded = toggleExpand();
+    win.webContents.send('window:expandChanged', expanded);
+  });
+
+  // Start sync engine with tools that have stored credentials
+  const connectedTools = getConnectedToolIds();
+  if (connectedTools.length > 0) {
+    syncEngine.setConnectedTools(connectedTools);
+    syncEngine.start();
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -109,46 +120,8 @@ async function handleDeepLink(url: string) {
   try {
     const parsed = new URL(url);
 
-    // OAuth callback: zaptask://oauth/callback?code=...&state=...
-    if (parsed.pathname === '/oauth/callback' || parsed.pathname === '//oauth/callback') {
-      const code = parsed.searchParams.get('code') || '';
-      const state = parsed.searchParams.get('state') || '';
-      const error = parsed.searchParams.get('error') || '';
-      const win = getMainWindow();
-
-      if (error) {
-        if (win) {
-          win.webContents.send(IPC.OAUTH_CALLBACK, {
-            success: false,
-            toolId: '',
-            error: parsed.searchParams.get('error_description') || error,
-          });
-        }
-        return;
-      }
-
-      if (!code || !state) {
-        if (win) {
-          win.webContents.send(IPC.OAUTH_CALLBACK, {
-            success: false,
-            toolId: '',
-            error: 'Missing code or state in OAuth callback',
-          });
-        }
-        return;
-      }
-
-      // Exchange authorization code for tokens in main process
-      const { handleOAuthCallback } = await import('./auth/oauth-manager');
-      const result = await handleOAuthCallback(code, state);
-
-      if (win) {
-        win.show();
-        win.focus();
-        win.webContents.send(IPC.OAUTH_CALLBACK, result);
-      }
-      return;
-    }
+    // OAuth callbacks are now handled by the loopback HTTP server
+    // (see src/main/auth/loopback-server.ts)
 
     // Task deep link: zaptask://task/{taskId}
     const taskMatch = parsed.pathname.match(/^\/?\/task\/(.+)$/);

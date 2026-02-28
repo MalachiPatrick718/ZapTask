@@ -5,7 +5,7 @@ import * as os from 'node:os';
 import { IPC } from '../shared/types/ipc-channels';
 import { syncEngine } from './services/sync-engine';
 import { getTaskRepository } from './database';
-import { expandToSettings, collapseToWidget } from './window-manager';
+import { expandWindow, collapseWindow, toggleExpand, getMainWindow } from './window-manager';
 import { getCredentials, setCredentials, clearCredentials } from './credential-store';
 import type { Task, TaskSource } from '../shared/types';
 
@@ -23,14 +23,24 @@ export function registerIpcHandlers(): void {
     BrowserWindow.fromWebContents(event.sender)?.setAlwaysOnTop(flag);
   });
 
-  ipcMain.handle(IPC.WINDOW_EXPAND_SETTINGS, async () => {
-    expandToSettings();
+  ipcMain.handle(IPC.WINDOW_EXPAND, async () => {
+    expandWindow();
     return { success: true };
   });
 
-  ipcMain.handle(IPC.WINDOW_COLLAPSE_WIDGET, async () => {
-    collapseToWidget();
+  ipcMain.handle(IPC.WINDOW_COLLAPSE, async () => {
+    collapseWindow();
     return { success: true };
+  });
+
+  ipcMain.handle(IPC.WINDOW_TOGGLE_EXPAND, async () => {
+    const expanded = toggleExpand();
+    // Notify renderer of the new state
+    const win = getMainWindow();
+    if (win) {
+      win.webContents.send('window:expandChanged', expanded);
+    }
+    return { success: true, expanded };
   });
 
   // Shell
@@ -40,12 +50,30 @@ export function registerIpcHandlers(): void {
     }
   });
 
-  // OAuth — direct OAuth 2.0 with PKCE
-  ipcMain.handle(IPC.OAUTH_START, async (_event, params: { toolId: string }) => {
+  // OAuth — direct OAuth 2.0 with PKCE via loopback server
+  ipcMain.handle(IPC.OAUTH_START, async (event, params: { toolId: string }) => {
     try {
       const { startOAuthFlow } = await import('./auth/oauth-manager');
-      const { state } = startOAuthFlow(params.toolId);
-      return { success: true, state };
+      const result = await startOAuthFlow(params.toolId);
+
+      // On success, add tool to sync engine so periodic sync picks it up
+      if (result.success) {
+        const { getConnectedToolIds } = await import('./credential-store');
+        syncEngine.setConnectedTools(getConnectedToolIds());
+        if (!syncEngine.isRunning) {
+          syncEngine.start();
+        }
+      }
+
+      // Send the result to the renderer via the callback channel
+      const win = BrowserWindow.fromWebContents(event.sender);
+      if (win) {
+        win.show();
+        win.focus();
+        win.webContents.send(IPC.OAUTH_CALLBACK, result);
+      }
+
+      return { success: true };
     } catch (err) {
       console.error(`[OAuth] Failed to start flow for ${params.toolId}:`, err);
       return { success: false, error: err instanceof Error ? err.message : String(err) };
@@ -168,13 +196,40 @@ export function registerIpcHandlers(): void {
     }
   });
 
-  // Paddle config
-  ipcMain.handle(IPC.PADDLE_GET_CONFIG, async () => {
+  ipcMain.handle(IPC.TASKS_DELETE_BY_SOURCE, async (_event, source: string) => {
+    try {
+      const count = getTaskRepository().deleteBySource(source);
+      return { success: true, data: count };
+    } catch (err) {
+      console.error('[IPC] tasks:deleteBySource error:', err);
+      return { success: false, error: String(err) };
+    }
+  });
+
+  // License config (Stripe Checkout base URL)
+  ipcMain.handle(IPC.LICENSE_GET_CONFIG, async () => {
     return {
-      clientToken: process.env.PADDLE_CLIENT_TOKEN || '',
-      priceIdMonthly: process.env.PADDLE_PRICE_ID_MONTHLY || '',
-      priceIdYearly: process.env.PADDLE_PRICE_ID_YEARLY || '',
+      checkoutBaseUrl: process.env.CHECKOUT_BASE_URL || 'https://zaptask.io/api/checkout',
     };
+  });
+
+  // License validation
+  ipcMain.handle(IPC.LICENSE_VALIDATE, async (_event, licenseKey: string) => {
+    try {
+      const apiBase = process.env.LICENSE_API_URL || 'https://zaptask.io';
+      const res = await fetch(`${apiBase}/api/license/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: licenseKey }),
+      });
+      if (!res.ok) {
+        return { valid: false, error: `HTTP ${res.status}` };
+      }
+      return await res.json();
+    } catch (err) {
+      console.error('[License] Validation error:', err);
+      return { valid: false, error: err instanceof Error ? err.message : String(err) };
+    }
   });
 
   // Feedback — capture screenshot

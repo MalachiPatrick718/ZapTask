@@ -97,32 +97,32 @@ export function toggleVisibility(): void {
   }
 }
 
-export function expandToSettings(): void {
+export function expandWindow(): void {
   if (!mainWindow) return;
 
   // Save current widget bounds for later restoration
   widgetBounds = mainWindow.getBounds();
 
   const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
-  const settingsWidth = 900;
-  const settingsHeight = 700;
+  const expandedWidth = 900;
+  const expandedHeight = 700;
 
   // Remove size constraints first
   mainWindow.setMinimumSize(360, 400);
   mainWindow.setMaximumSize(1200, 900);
   mainWindow.setResizable(true);
 
-  // Disable always-on-top for settings mode
+  // Disable always-on-top for expanded mode
   mainWindow.setAlwaysOnTop(false);
 
   // Center on screen
-  const x = Math.round((screenWidth - settingsWidth) / 2);
-  const y = Math.round((screenHeight - settingsHeight) / 2);
+  const x = Math.round((screenWidth - expandedWidth) / 2);
+  const y = Math.round((screenHeight - expandedHeight) / 2);
 
-  mainWindow.setBounds({ x, y, width: settingsWidth, height: settingsHeight }, true);
+  mainWindow.setBounds({ x, y, width: expandedWidth, height: expandedHeight }, true);
 }
 
-export function collapseToWidget(): void {
+export function collapseWindow(): void {
   if (!mainWindow) return;
 
   const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
@@ -145,4 +145,20 @@ export function collapseToWidget(): void {
 
   mainWindow.setBounds(bounds, true);
   widgetBounds = null;
+}
+
+export function isExpanded(): boolean {
+  if (!mainWindow) return false;
+  const bounds = mainWindow.getBounds();
+  return bounds.width > 400;
+}
+
+export function toggleExpand(): boolean {
+  if (isExpanded()) {
+    collapseWindow();
+    return false; // now widget mode
+  } else {
+    expandWindow();
+    return true; // now expanded mode
+  }
 }

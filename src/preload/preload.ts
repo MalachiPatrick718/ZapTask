@@ -6,8 +6,14 @@ const api = {
   minimize: () => ipcRenderer.send(IPC.WINDOW_MINIMIZE),
   hide: () => ipcRenderer.send(IPC.WINDOW_HIDE),
   setAlwaysOnTop: (v: boolean) => ipcRenderer.send(IPC.WINDOW_ALWAYS_ON_TOP, v),
-  expandToSettings: () => ipcRenderer.invoke(IPC.WINDOW_EXPAND_SETTINGS),
-  collapseToWidget: () => ipcRenderer.invoke(IPC.WINDOW_COLLAPSE_WIDGET),
+  expand: () => ipcRenderer.invoke(IPC.WINDOW_EXPAND),
+  collapse: () => ipcRenderer.invoke(IPC.WINDOW_COLLAPSE),
+  toggleExpand: () => ipcRenderer.invoke(IPC.WINDOW_TOGGLE_EXPAND),
+  onExpandChanged: (cb: (expanded: boolean) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, expanded: boolean) => cb(expanded);
+    ipcRenderer.on('window:expandChanged', handler);
+    return () => { ipcRenderer.removeListener('window:expandChanged', handler); };
+  },
 
   // Shell
   openUrl: (url: string) => ipcRenderer.send(IPC.SHELL_OPEN_URL, url),
@@ -46,6 +52,7 @@ const api = {
     create: (task: any) => ipcRenderer.invoke(IPC.TASKS_CREATE, task),
     update: (id: string, changes: any) => ipcRenderer.invoke(IPC.TASKS_UPDATE, id, changes),
     delete: (id: string) => ipcRenderer.invoke(IPC.TASKS_DELETE, id),
+    deleteBySource: (source: string) => ipcRenderer.invoke(IPC.TASKS_DELETE_BY_SOURCE, source),
   },
 
   // Notifications
@@ -67,12 +74,17 @@ const api = {
     return () => { ipcRenderer.removeListener(IPC.NAVIGATE_TO_TASK, handler); };
   },
 
-  // Paddle billing
-  paddle: {
-    getConfig: () => ipcRenderer.invoke(IPC.PADDLE_GET_CONFIG) as Promise<{
-      clientToken: string;
-      priceIdMonthly: string;
-      priceIdYearly: string;
+  // License / Billing
+  license: {
+    getConfig: () => ipcRenderer.invoke(IPC.LICENSE_GET_CONFIG) as Promise<{
+      checkoutBaseUrl: string;
+    }>,
+    validate: (key: string) => ipcRenderer.invoke(IPC.LICENSE_VALIDATE, key) as Promise<{
+      valid: boolean;
+      tier?: string;
+      expiresAt?: string | null;
+      email?: string | null;
+      error?: string;
     }>,
   },
 

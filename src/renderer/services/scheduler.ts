@@ -79,3 +79,102 @@ export function scheduleTaskIntoDay(
   // Fallback: scan the entire day for any available slot
   return findSlot(Math.max(earliestMin, dayStartMin), dayEndMin);
 }
+
+// === Schedule Suggestions ===
+
+export interface ScheduleSuggestion {
+  id: string;
+  start: string;       // HH:MM
+  end: string;         // HH:MM
+  date: string;        // YYYY-MM-DD
+  energyMatch: 'perfect' | 'good' | 'any';
+  energyLevel: EnergyLevel | null;
+  isBest: boolean;
+}
+
+function minToStr(min: number): string {
+  return `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+}
+
+/**
+ * Return up to `max` schedule suggestions for a task on a given date.
+ * Slots are scored by energy match quality and deduplicated (30-min spacing).
+ */
+export function getScheduleSuggestions(
+  task: Task,
+  date: Date,
+  energyProfile: EnergyProfile,
+  existingBlocks: TimeBlock[],
+  energyOverride?: EnergyLevel | null,
+  max = 4,
+): ScheduleSuggestion[] {
+  const targetDate = format(date, 'yyyy-MM-dd');
+  const duration = task.estimatedMinutes || 30;
+  const isToday = format(new Date(), 'yyyy-MM-dd') === targetDate;
+
+  let earliestMin: number;
+  if (isToday) {
+    const now = new Date();
+    earliestMin = Math.ceil((now.getHours() * 60 + now.getMinutes()) / 15) * 15;
+  } else {
+    earliestMin = DAY_START_HOUR * 60;
+  }
+
+  const dayBlocks = existingBlocks.filter((b) => b.date === targetDate);
+  const scanStart = Math.max(earliestMin, DAY_START_HOUR * 60);
+  const scanEnd = DAY_END_HOUR * 60;
+  const levels: EnergyLevel[] = ['low', 'medium', 'high'];
+
+  const allSlots: Array<{
+    startMin: number;
+    start: string;
+    end: string;
+    energyLevel: EnergyLevel | null;
+    matchQuality: 'perfect' | 'good' | 'any';
+  }> = [];
+
+  for (let slotStart = scanStart; slotStart + duration <= scanEnd; slotStart += 15) {
+    const slotEnd = slotStart + duration;
+    const startStr = minToStr(slotStart);
+    const endStr = minToStr(slotEnd);
+
+    if (dayBlocks.some((tb) => tb.start < endStr && tb.end > startStr)) continue;
+
+    // Energy level at midpoint of the slot
+    const midHour = (slotStart + duration / 2) / 60;
+    const eBlock = energyProfile.blocks.find((b) => midHour >= b.start && midHour < b.end);
+    const slotEnergy = eBlock?.level ?? null;
+
+    let matchQuality: 'perfect' | 'good' | 'any' = 'any';
+    if (task.energyRequired && slotEnergy && !energyOverride) {
+      const reqIdx = levels.indexOf(task.energyRequired);
+      const slotIdx = levels.indexOf(slotEnergy);
+      if (slotIdx === reqIdx) matchQuality = 'perfect';
+      else if (slotIdx > reqIdx) matchQuality = 'good';
+    }
+
+    allSlots.push({ startMin: slotStart, start: startStr, end: endStr, energyLevel: slotEnergy, matchQuality });
+  }
+
+  // Sort: perfect → good → any, then earlier first
+  const tierOrder = { perfect: 0, good: 1, any: 2 };
+  allSlots.sort((a, b) => tierOrder[a.matchQuality] - tierOrder[b.matchQuality] || a.startMin - b.startMin);
+
+  // Deduplicate: skip slots within 30 minutes of already-selected
+  const selected: typeof allSlots = [];
+  for (const slot of allSlots) {
+    if (selected.length >= max) break;
+    if (selected.some((s) => Math.abs(s.startMin - slot.startMin) < 30)) continue;
+    selected.push(slot);
+  }
+
+  return selected.map((slot, i) => ({
+    id: crypto.randomUUID(),
+    start: slot.start,
+    end: slot.end,
+    date: targetDate,
+    energyMatch: slot.matchQuality,
+    energyLevel: slot.energyLevel,
+    isBest: i === 0,
+  }));
+}

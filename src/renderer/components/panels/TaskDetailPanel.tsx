@@ -17,9 +17,9 @@ function to12h(time: string): string {
 }
 
 const energyOptions: { value: EnergyLevel; icon: string; label: string; color: string }[] = [
-  { value: 'high', icon: '\u26A1', label: 'High', color: 'var(--energy-high)' },
-  { value: 'medium', icon: '\uD83D\uDD0B', label: 'Med', color: 'var(--energy-med)' },
-  { value: 'low', icon: '\uD83C\uDF19', label: 'Low', color: 'var(--energy-low)' },
+  { value: 'high', icon: '\uD83C\uDFAF', label: 'Deep', color: 'var(--energy-high)' },
+  { value: 'medium', icon: '\u2699\uFE0F', label: 'Med', color: 'var(--energy-med)' },
+  { value: 'low', icon: '\u2615', label: 'Low', color: 'var(--energy-low)' },
 ];
 
 const priorityOptions: { value: Task['priority']; label: string; icon: string }[] = [
@@ -399,8 +399,8 @@ export function TaskDetailPanel() {
             ))}
           </InlineField>
 
-          {/* Energy — inline chips */}
-          <InlineField label="Energy">
+          {/* Focus level — inline chips */}
+          <InlineField label="Focus">
             {energyOptions.map((e) => (
               <button
                 key={e.value}

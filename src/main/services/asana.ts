@@ -16,7 +16,7 @@ export class AsanaService implements IntegrationService {
   }
 
   async fetchTasks(accessToken: string): Promise<Task[]> {
-    if (!accessToken) return this.stubTasks();
+    if (!accessToken) return [];
 
     try {
       const res = await fetch(
@@ -49,24 +49,7 @@ export class AsanaService implements IntegrationService {
       } satisfies Task));
     } catch (err) {
       console.error('[Asana] API error:', err);
-      return this.stubTasks();
+      return [];
     }
-  }
-
-  private stubTasks(): Task[] {
-    const now = new Date().toISOString();
-    const inTwoDays = new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
-    return [
-      {
-        id: 'asana-001', title: 'Review design mockups',
-        description: 'Review the latest Figma mockups from the design team',
-        source: 'asana', sourceId: '1234567890',
-        sourceUrl: 'https://app.asana.com/0/1234567890/1234567890',
-        category: 'work', status: 'todo', priority: 'medium', energyRequired: null,
-        estimatedMinutes: 30, dueDate: inTwoDays, tags: ['design'],
-        notes: [], createdAt: now, updatedAt: now, syncedAt: now,
-        startTime: null, endTime: null, location: null, conferenceUrl: null, recurrenceRule: null, recurrenceParentId: null,
-      },
-    ];
   }
 }

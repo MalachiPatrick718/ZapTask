@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useStore } from '../../store';
 import { AccountStep } from './AccountStep';
-import { ConnectToolsStep } from './ConnectToolsStep';
 import { EnergyProfileStep } from './EnergyProfileStep';
+import { GettingStartedStep } from './GettingStartedStep';
 import { PlanStep } from './PlanStep';
 
 const TOTAL_STEPS = 4;
@@ -18,11 +18,11 @@ export function Onboarding() {
     setStep(2);
   };
 
-  const handleToolsContinue = () => {
+  const handleEnergyComplete = () => {
     setStep(3);
   };
 
-  const handleEnergyComplete = () => {
+  const handleGettingStartedContinue = () => {
     setStep(4);
   };
 
@@ -31,15 +31,13 @@ export function Onboarding() {
     setOnboardingComplete(true);
   };
 
-  const handleChooseTrial = () => {
-    const now = new Date();
-    const trialEnd = new Date(now);
-    trialEnd.setDate(trialEnd.getDate() + 14);
+  const handleActivateLicense = (key: string, expiresAt: string | null) => {
     setSubscription({
-      tier: 'trial',
+      tier: 'pro',
       status: 'active',
-      trialStartedAt: now.toISOString(),
-      trialEndsAt: trialEnd.toISOString(),
+      licenseKey: key,
+      currentPeriodEnd: expiresAt,
+      lastValidatedAt: new Date().toISOString(),
     });
     setOnboardingComplete(true);
   };
@@ -97,9 +95,9 @@ export function Onboarding() {
         padding: '16px 24px 24px',
       }}>
         {step === 1 && <AccountStep onContinue={handleAccountContinue} />}
-        {step === 2 && <ConnectToolsStep onContinue={handleToolsContinue} />}
-        {step === 3 && <EnergyProfileStep onComplete={handleEnergyComplete} />}
-        {step === 4 && <PlanStep onChooseFree={handleChooseFree} onChooseTrial={handleChooseTrial} />}
+        {step === 2 && <EnergyProfileStep onComplete={handleEnergyComplete} />}
+        {step === 3 && <GettingStartedStep onContinue={handleGettingStartedContinue} />}
+        {step === 4 && <PlanStep onChooseFree={handleChooseFree} onActivateLicense={handleActivateLicense} />}
       </div>
     </div>
   );

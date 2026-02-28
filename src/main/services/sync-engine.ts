@@ -31,6 +31,10 @@ export class SyncEngine {
     this.interval = setInterval(() => this.syncAll(), intervalMs);
   }
 
+  get isRunning() {
+    return this.interval !== null;
+  }
+
   stop() {
     if (this.interval) {
       clearInterval(this.interval);
@@ -70,7 +74,7 @@ export class SyncEngine {
       try {
         accessToken = await getValidAccessToken(source);
       } catch (err) {
-        console.warn(`[Sync] Could not get token for ${source}, using stub:`, err);
+        console.warn(`[Sync] Could not get token for ${source}, skipping:`, err);
       }
 
       const remoteTasks = await service.fetchTasks(accessToken);

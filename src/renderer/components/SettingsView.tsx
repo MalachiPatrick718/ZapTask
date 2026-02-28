@@ -18,64 +18,102 @@ const sidebarItems: { id: SettingsTab; label: string; icon: string }[] = [
 
 export function SettingsView() {
   const [tab, setTab] = useState<SettingsTab>('integrations');
+  const windowMode = useStore((s) => s.windowMode);
+  const isWidget = windowMode === 'widget';
 
   return (
-    <div style={{ display: 'flex', height: '100%' }}>
-      {/* Sidebar */}
-      <nav style={{
-        width: 200,
-        flexShrink: 0,
-        borderRight: '1px solid var(--border)',
-        padding: '16px 0',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 2,
-      }}>
-        <div style={{
-          padding: '0 16px 12px',
-          fontSize: 13,
-          fontFamily: 'var(--font-display)',
-          fontWeight: 700,
-          color: 'var(--text2)',
-          letterSpacing: '0.02em',
+    <div style={{ display: 'flex', flexDirection: isWidget ? 'column' : 'row', height: '100%' }}>
+      {/* Sidebar (expanded) / Tab strip (widget) */}
+      {isWidget ? (
+        <nav style={{
+          display: 'flex',
+          borderBottom: '1px solid var(--border)',
+          padding: '0 8px',
+          overflow: 'auto',
+          flexShrink: 0,
         }}>
-          Settings
-        </div>
-        {sidebarItems.map((item) => {
-          const active = tab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setTab(item.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '8px 16px',
-                margin: '0 8px',
-                borderRadius: 'var(--radius-sm)',
-                background: active ? 'var(--accent-dim)' : 'transparent',
-                color: active ? 'var(--accent)' : 'var(--text2)',
-                fontSize: 13,
-                fontWeight: active ? 600 : 400,
-                border: 'none',
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'all 150ms ease',
-              }}
-            >
-              <span style={{ fontSize: 15 }}>{item.icon}</span>
-              {item.label}
-            </button>
-          );
-        })}
-      </nav>
+          {sidebarItems.map((item) => {
+            const active = tab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setTab(item.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  padding: '8px 10px',
+                  background: 'transparent',
+                  color: active ? 'var(--accent)' : 'var(--text3)',
+                  fontSize: 12,
+                  fontWeight: active ? 600 : 400,
+                  border: 'none',
+                  borderBottom: active ? '2px solid var(--accent)' : '2px solid transparent',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 150ms ease',
+                }}
+              >
+                <span style={{ fontSize: 13 }}>{item.icon}</span>
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
+      ) : (
+        <nav style={{
+          width: 200,
+          flexShrink: 0,
+          borderRight: '1px solid var(--border)',
+          padding: '16px 0',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
+        }}>
+          <div style={{
+            padding: '0 16px 12px',
+            fontSize: 13,
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            color: 'var(--text2)',
+            letterSpacing: '0.02em',
+          }}>
+            Settings
+          </div>
+          {sidebarItems.map((item) => {
+            const active = tab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setTab(item.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '8px 16px',
+                  margin: '0 8px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: active ? 'var(--accent-dim)' : 'transparent',
+                  color: active ? 'var(--accent)' : 'var(--text2)',
+                  fontSize: 13,
+                  fontWeight: active ? 600 : 400,
+                  border: 'none',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 150ms ease',
+                }}
+              >
+                <span style={{ fontSize: 15 }}>{item.icon}</span>
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
+      )}
 
       {/* Content */}
       <div style={{
         flex: 1,
         overflow: 'auto',
-        padding: '24px 32px',
+        padding: isWidget ? '16px' : '24px 32px',
       }}>
         {tab === 'integrations' && <IntegrationsTab />}
         {tab === 'energy' && <EnergyTab />}
@@ -125,11 +163,16 @@ function IntegrationsTab() {
     }
   }, [addToast]);
 
+  const setTasks = useStore((s) => s.setTasks);
   const handleDisconnect = useCallback(async (toolId: string) => {
     setToolConnected(toolId, false);
     await window.zaptask.clearCredentials(toolId);
+    // Remove synced tasks from this source
+    await window.zaptask.tasks.deleteBySource(toolId);
+    const currentTasks = useStore.getState().tasks;
+    setTasks(currentTasks.filter((t) => t.source !== toolId));
     addToast(`${TOOL_META[toolId]?.name || toolId} disconnected`, 'info');
-  }, [setToolConnected, addToast]);
+  }, [setToolConnected, setTasks, addToast]);
 
   return (
     <div>
@@ -275,7 +318,7 @@ function EnergyTab() {
         Energy Profile
       </h3>
       <p style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 20 }}>
-        Set your energy levels throughout the day to get smarter task suggestions.
+        Set your energy levels throughout the day so ZapTask can match tasks to your focus capacity.
       </p>
 
       <EnergyEditor
@@ -512,6 +555,45 @@ function PreferencesTab() {
             </span>
           </div>
         </div>
+
+        {/* Keyboard Shortcuts */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '16px',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+        }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text1)' }}>Keyboard Shortcuts</div>
+            <div style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>
+              {'\u2318'}N new task &middot; {'\u2318'}E expand &middot; {'\u2318'}F search &middot; {'\u2318'}? guide
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Start Guide */}
+        <button
+          onClick={() => useStore.getState().setActivePanel('quickStart')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '14px 16px', width: '100%',
+            background: 'var(--accent-dim)',
+            border: '1px solid var(--accent)',
+            borderRadius: 'var(--radius-md)',
+            cursor: 'pointer',
+            textAlign: 'left',
+            transition: 'all 150ms ease',
+          }}
+        >
+          <span style={{ fontSize: 18 }}>{'\uD83D\uDCD6'}</span>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>Quick Start Guide</div>
+            <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 1 }}>
+              Tips, keyboard shortcuts, and features overview
+            </div>
+          </div>
+        </button>
       </div>
     </div>
   );

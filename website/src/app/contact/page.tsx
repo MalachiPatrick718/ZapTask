@@ -19,7 +19,7 @@ const contactMethods = [
   {
     label: "Billing & Subscriptions",
     description:
-      "Refunds, payment issues, or subscription changes. Handled by our payment provider Paddle.",
+      "Refunds, payment issues, or subscription changes. Payments processed by Stripe.",
     href: "mailto:support@zaptask.io",
     linkText: "support@zaptask.io",
     icon: "\uD83D\uDCB3",

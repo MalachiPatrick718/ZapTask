@@ -63,3 +63,9 @@ export function clearCredentials(toolId: string): void {
   delete data[toolId];
   save(data);
 }
+
+/** Return tool IDs that have a stored access token. */
+export function getConnectedToolIds(): string[] {
+  const data = load();
+  return Object.keys(data).filter((k) => data[k]?.accessToken);
+}

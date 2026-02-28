@@ -1,30 +1,14 @@
 import { shell } from 'electron';
-import { OAUTH_PROVIDERS, REDIRECT_URI, type OAuthProviderConfig } from './oauth-config';
+import { OAUTH_PROVIDERS, getRedirectUri, type OAuthProviderConfig } from './oauth-config';
 import { generatePKCE, generateState } from './pkce';
 import { getCredentials, setCredentials } from '../credential-store';
-
-interface PendingFlow {
-  toolId: string;
-  state: string;
-  codeVerifier: string | null;
-  createdAt: number;
-}
+import { startLoopbackServer } from './loopback-server';
 
 interface TokenResponse {
   access_token: string;
   refresh_token?: string;
   expires_in?: number;
   token_type?: string;
-}
-
-const pendingFlows = new Map<string, PendingFlow>();
-const FLOW_TTL_MS = 10 * 60 * 1000;
-
-function cleanStaleFlows(): void {
-  const now = Date.now();
-  for (const [state, flow] of pendingFlows) {
-    if (now - flow.createdAt > FLOW_TTL_MS) pendingFlows.delete(state);
-  }
 }
 
 const CLIENT_CREDENTIALS: Record<string, { clientId: string; clientSecret: string }> = {
@@ -41,16 +25,33 @@ function getClientCredentials(toolId: string): { clientId: string; clientSecret:
 }
 
 /**
- * Start an OAuth flow: build auth URL and open in system browser.
+ * Start an OAuth flow:
+ * 1. Spin up a temp loopback HTTP server
+ * 2. Open system browser to auth URL with loopback redirect
+ * 3. Wait for provider to redirect back with code
+ * 4. Exchange code for tokens
+ * 5. Store credentials and return result
  */
-export function startOAuthFlow(toolId: string): { state: string } {
-  cleanStaleFlows();
-
+export async function startOAuthFlow(
+  toolId: string,
+): Promise<{ success: boolean; toolId: string; error?: string }> {
   const config = OAUTH_PROVIDERS[toolId];
-  if (!config) throw new Error(`Unknown OAuth provider: ${toolId}`);
+  if (!config) {
+    return { success: false, toolId, error: `Unknown OAuth provider: ${toolId}` };
+  }
 
-  const { clientId } = getClientCredentials(toolId);
-  if (!clientId) throw new Error(`${toolId.charAt(0).toUpperCase() + toolId.slice(1)} integration is not configured yet`);
+  const { clientId, clientSecret } = getClientCredentials(toolId);
+  if (!clientId) {
+    return {
+      success: false,
+      toolId,
+      error: `${toolId.charAt(0).toUpperCase() + toolId.slice(1)} integration is not configured yet`,
+    };
+  }
+
+  // Start loopback server to catch the callback
+  const server = startLoopbackServer();
+  const redirectUri = getRedirectUri(server.port);
 
   const state = generateState();
   let codeVerifier: string | null = null;
@@ -58,7 +59,7 @@ export function startOAuthFlow(toolId: string): { state: string } {
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: clientId,
-    redirect_uri: REDIRECT_URI,
+    redirect_uri: redirectUri,
     state,
   });
 
@@ -79,38 +80,19 @@ export function startOAuthFlow(toolId: string): { state: string } {
     }
   }
 
-  pendingFlows.set(state, { toolId, state, codeVerifier, createdAt: Date.now() });
-
   const authUrl = `${config.authUrl}?${params.toString()}`;
   shell.openExternal(authUrl);
 
-  return { state };
-}
-
-/**
- * Handle the OAuth callback: exchange authorization code for tokens.
- */
-export async function handleOAuthCallback(
-  code: string,
-  state: string,
-): Promise<{ success: boolean; toolId: string; error?: string }> {
-  const flow = pendingFlows.get(state);
-  if (!flow) {
-    return { success: false, toolId: '', error: 'Invalid or expired OAuth state' };
-  }
-
-  pendingFlows.delete(state);
-  const { toolId, codeVerifier } = flow;
-
-  const config = OAUTH_PROVIDERS[toolId];
-  if (!config) {
-    return { success: false, toolId, error: `Unknown provider: ${toolId}` };
-  }
-
-  const { clientId, clientSecret } = getClientCredentials(toolId);
-
   try {
-    const tokens = await exchangeCode(config, clientId, clientSecret, code, codeVerifier);
+    // Wait for the loopback server to receive the callback
+    const { code, state: returnedState } = await server.result;
+
+    if (returnedState !== state) {
+      return { success: false, toolId, error: 'OAuth state mismatch' };
+    }
+
+    // Exchange authorization code for tokens
+    const tokens = await exchangeCode(config, clientId, clientSecret, code, codeVerifier, redirectUri);
 
     setCredentials(toolId, {
       accessToken: tokens.access_token,
@@ -123,8 +105,9 @@ export async function handleOAuthCallback(
 
     return { success: true, toolId };
   } catch (err) {
+    server.close();
     const msg = err instanceof Error ? err.message : String(err);
-    console.error(`[OAuth] Token exchange failed for ${toolId}:`, msg);
+    console.error(`[OAuth] Flow failed for ${toolId}:`, msg);
     return { success: false, toolId, error: msg };
   }
 }
@@ -135,11 +118,12 @@ async function exchangeCode(
   clientSecret: string,
   code: string,
   codeVerifier: string | null,
+  redirectUri: string,
 ): Promise<TokenResponse> {
   const body = new URLSearchParams({
     grant_type: 'authorization_code',
     code,
-    redirect_uri: REDIRECT_URI,
+    redirect_uri: redirectUri,
   });
 
   const headers: Record<string, string> = {

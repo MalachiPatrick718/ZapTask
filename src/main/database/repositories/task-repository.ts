@@ -91,6 +91,7 @@ export class TaskRepository {
   private stmtInsert: Database.Statement;
   private stmtUpdate: Database.Statement;
   private stmtDelete: Database.Statement;
+  private stmtDeleteBySource: Database.Statement;
 
   constructor() {
     this.db = getDb();
@@ -129,6 +130,7 @@ export class TaskRepository {
     `);
 
     this.stmtDelete = this.db.prepare('DELETE FROM tasks WHERE id = ?');
+    this.stmtDeleteBySource = this.db.prepare('DELETE FROM tasks WHERE source = ?');
   }
 
   getAll(): Task[] {
@@ -162,5 +164,10 @@ export class TaskRepository {
   delete(id: string): boolean {
     const result = this.stmtDelete.run(id);
     return result.changes > 0;
+  }
+
+  deleteBySource(source: string): number {
+    const result = this.stmtDeleteBySource.run(source);
+    return result.changes;
   }
 }

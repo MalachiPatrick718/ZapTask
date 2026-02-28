@@ -26,7 +26,7 @@ export class JiraService implements IntegrationService {
   }
 
   async fetchTasks(accessToken: string): Promise<Task[]> {
-    if (!accessToken) return this.stubTasks();
+    if (!accessToken) return [];
 
     try {
       // First get accessible resources (cloud IDs)
@@ -73,42 +73,7 @@ export class JiraService implements IntegrationService {
       });
     } catch (err) {
       console.error('[Jira] API error:', err);
-      return this.stubTasks();
+      return [];
     }
-  }
-
-  private stubTasks(): Task[] {
-    const now = new Date().toISOString();
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-    const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
-    return [
-      {
-        id: 'jira-001', title: '[PROJ-142] Fix login page validation',
-        description: 'Email validation regex is too strict', source: 'jira',
-        sourceId: 'PROJ-142', sourceUrl: 'https://team.atlassian.net/browse/PROJ-142',
-        category: 'work', status: 'todo', priority: 'high', energyRequired: null,
-        estimatedMinutes: 45, dueDate: tomorrow, tags: ['frontend', 'bug'],
-        notes: [], createdAt: now, updatedAt: now, syncedAt: now,
-        startTime: null, endTime: null, location: null, conferenceUrl: null, recurrenceRule: null, recurrenceParentId: null,
-      },
-      {
-        id: 'jira-002', title: '[PROJ-138] Add dark mode support',
-        description: 'Implement dark mode theme tokens', source: 'jira',
-        sourceId: 'PROJ-138', sourceUrl: 'https://team.atlassian.net/browse/PROJ-138',
-        category: 'work', status: 'in_progress', priority: 'medium', energyRequired: null,
-        estimatedMinutes: 120, dueDate: nextWeek, tags: ['frontend', 'feature'],
-        notes: [], createdAt: now, updatedAt: now, syncedAt: now,
-        startTime: null, endTime: null, location: null, conferenceUrl: null, recurrenceRule: null, recurrenceParentId: null,
-      },
-      {
-        id: 'jira-003', title: '[PROJ-155] Update API documentation',
-        description: 'Document the new /v2/users endpoints', source: 'jira',
-        sourceId: 'PROJ-155', sourceUrl: 'https://team.atlassian.net/browse/PROJ-155',
-        category: 'work', status: 'todo', priority: 'low', energyRequired: null,
-        estimatedMinutes: 30, dueDate: null, tags: ['docs'],
-        notes: [], createdAt: now, updatedAt: now, syncedAt: now,
-        startTime: null, endTime: null, location: null, conferenceUrl: null, recurrenceRule: null, recurrenceParentId: null,
-      },
-    ];
   }
 }

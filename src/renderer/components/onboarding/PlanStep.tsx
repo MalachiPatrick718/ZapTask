@@ -1,11 +1,5 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Btn } from '../shared/Btn';
-
-declare global {
-  interface Window {
-    Paddle?: any;
-  }
-}
 
 const freeFeatures = [
   'Up to 10 active tasks',
@@ -23,102 +17,62 @@ const proFeatures = [
   'Priority support',
 ];
 
-interface PaddleConfig {
-  clientToken: string;
-  priceIdMonthly: string;
-  priceIdYearly: string;
-}
-
-function loadPaddleScript(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (window.Paddle) { resolve(); return; }
-    const script = document.createElement('script');
-    script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js';
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Failed to load Paddle.js'));
-    document.head.appendChild(script);
-  });
-}
-
-function getTrialEndDate(): string {
-  const d = new Date();
-  d.setDate(d.getDate() + 14);
-  return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
-}
-
 interface PlanStepProps {
   onChooseFree: () => void;
-  onChooseTrial: () => void;
+  onActivateLicense: (key: string, expiresAt: string | null) => void;
 }
 
-export function PlanStep({ onChooseFree, onChooseTrial }: PlanStepProps) {
+export function PlanStep({ onChooseFree, onActivateLicense }: PlanStepProps) {
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('yearly');
-  const [paddleConfig, setPaddleConfig] = useState<PaddleConfig | null>(null);
+  const [showKeyInput, setShowKeyInput] = useState(false);
+  const [licenseKey, setLicenseKey] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const paddleInitialized = useRef(false);
+  const [checkoutBaseUrl, setCheckoutBaseUrl] = useState<string | null>(null);
 
-  // Load Paddle config + script on mount
   useEffect(() => {
-    if (paddleInitialized.current) return;
-    let cancelled = false;
-
     (async () => {
       try {
-        const config = await window.zaptask.paddle.getConfig();
-        if (cancelled) return;
-        setPaddleConfig(config);
-
-        if (!config.clientToken) return;
-
-        await loadPaddleScript();
-        if (cancelled || !window.Paddle) return;
-
-        window.Paddle.Initialize({
-          token: config.clientToken,
-          eventCallback: (event: any) => {
-            if (event.name === 'checkout.completed') {
-              // Paddle checkout succeeded — complete onboarding as trial
-              onChooseTrial();
-            }
-          },
-        });
-        paddleInitialized.current = true;
-      } catch (err) {
-        if (!cancelled) {
-          console.error('[Paddle] Init error:', err);
-        }
-      }
+        const cfg = await window.zaptask.license.getConfig();
+        setCheckoutBaseUrl(cfg.checkoutBaseUrl);
+      } catch { /* fallback to key input only */ }
     })();
-
-    return () => { cancelled = true; };
-  }, [onChooseTrial]);
+  }, []);
 
   const handleStartTrial = useCallback(() => {
-    setError(null);
+    if (checkoutBaseUrl) {
+      const url = `${checkoutBaseUrl}?plan=${billing}&trial=true`;
+      window.zaptask.openUrl(url);
+      setShowKeyInput(true);
+    } else {
+      setError('Checkout not available. Enter a license key to activate.');
+      setShowKeyInput(true);
+    }
+  }, [billing, checkoutBaseUrl]);
 
-    // If Paddle is loaded, open real checkout
-    if (window.Paddle && paddleConfig?.clientToken) {
-      setLoading(true);
-      const priceId = billing === 'monthly'
-        ? paddleConfig.priceIdMonthly
-        : paddleConfig.priceIdYearly;
-
-      try {
-        window.Paddle.Checkout.open({
-          items: [{ priceId, quantity: 1 }],
-        });
-      } catch (err) {
-        console.error('[Paddle] Checkout error:', err);
-        setError('Could not open checkout. Please try again.');
-      }
-      setLoading(false);
+  const handleActivateKey = useCallback(async () => {
+    const key = licenseKey.trim();
+    if (!key) {
+      setError('Please enter a license key.');
       return;
     }
 
-    // Fallback: no Paddle keys configured — start trial without payment
-    onChooseTrial();
-  }, [billing, paddleConfig, onChooseTrial]);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await window.zaptask.license.validate(key);
+      if (result.valid) {
+        onActivateLicense(key, result.expiresAt ?? null);
+      } else {
+        setError(result.error || 'Invalid license key.');
+      }
+    } catch {
+      setError('Could not validate key. Check your connection.');
+    } finally {
+      setLoading(false);
+    }
+  }, [licenseKey, onActivateLicense]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -242,9 +196,49 @@ export function PlanStep({ onChooseFree, onChooseTrial }: PlanStepProps) {
         </div>
       )}
 
+      {/* License key input */}
+      {showKeyInput && (
+        <div style={{
+          padding: '12px',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+        }}>
+          <div style={{
+            fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text2)',
+            marginBottom: 8,
+          }}>
+            Paste your license key after completing checkout:
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              type="text"
+              value={licenseKey}
+              onChange={(e) => setLicenseKey(e.target.value)}
+              placeholder="ZT-XXXX-XXXX-XXXX-XXXX"
+              style={{
+                flex: 1,
+                padding: '7px 10px',
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--text1)',
+                fontSize: 12,
+                fontFamily: 'var(--font-mono)',
+                letterSpacing: 1,
+              }}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleActivateKey(); }}
+            />
+            <Btn onClick={handleActivateKey} disabled={loading || !licenseKey.trim()} size="sm">
+              {loading ? '...' : 'Activate'}
+            </Btn>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-        <Btn onClick={handleStartTrial} disabled={loading} style={{ width: '100%' }}>
-          {loading ? 'Opening checkout...' : 'Start 14-Day Free Trial'}
+        <Btn onClick={handleStartTrial} style={{ width: '100%' }}>
+          Start 14-Day Free Trial
         </Btn>
         <button
           onClick={onChooseFree}
@@ -263,13 +257,31 @@ export function PlanStep({ onChooseFree, onChooseTrial }: PlanStepProps) {
         </button>
       </div>
 
+      {!showKeyInput && (
+        <button
+          onClick={() => setShowKeyInput(true)}
+          style={{
+            padding: 0,
+            background: 'none',
+            border: 'none',
+            color: 'var(--text3)',
+            fontSize: 11,
+            fontFamily: 'var(--font-mono)',
+            cursor: 'pointer',
+            textAlign: 'center',
+          }}
+        >
+          I have a license key
+        </button>
+      )}
+
       <p style={{
         fontSize: 11,
         color: 'var(--text3)',
         textAlign: 'center',
         lineHeight: 1.4,
       }}>
-        You won't be charged until {getTrialEndDate()}. Cancel anytime.
+        Your card won't be charged during the 14-day trial. Cancel anytime.
       </p>
     </div>
   );

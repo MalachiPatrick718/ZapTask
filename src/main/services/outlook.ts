@@ -9,7 +9,7 @@ export class OutlookService implements IntegrationService {
   }
 
   async fetchTasks(accessToken: string): Promise<Task[]> {
-    if (!accessToken) return this.stubTasks();
+    if (!accessToken) return [];
 
     try {
       const now = new Date();
@@ -61,25 +61,7 @@ export class OutlookService implements IntegrationService {
       });
     } catch (err) {
       console.error('[Outlook] API error:', err);
-      return this.stubTasks();
+      return [];
     }
-  }
-
-  private stubTasks(): Task[] {
-    const now = new Date().toISOString();
-    const today = new Date().toISOString().split('T')[0];
-    return [
-      {
-        id: 'outlook-001', title: 'Weekly team sync',
-        description: 'Recurring weekly sync with the product team', source: 'outlook',
-        sourceId: 'AAMkAG-001', sourceUrl: 'https://outlook.office365.com/calendar/item/AAMkAG-001',
-        category: 'work', status: 'todo', priority: 'medium', energyRequired: null,
-        estimatedMinutes: 30, dueDate: today, tags: ['meeting'],
-        notes: [], createdAt: now, updatedAt: now, syncedAt: now,
-        startTime: `${today}T10:00:00`, endTime: `${today}T10:30:00`,
-        location: null, conferenceUrl: 'https://teams.microsoft.com/l/meetup-join/abc123',
-        recurrenceRule: null, recurrenceParentId: null,
-      },
-    ];
   }
 }

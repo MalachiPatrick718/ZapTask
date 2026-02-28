@@ -14,9 +14,9 @@ import { DEFAULT_ENERGY_PROFILE } from '../../shared/types';
 import { createNextRecurringTask } from '../services/recurrence';
 
 // === View & Panel types ===
-export type ActiveView = 'tasks' | 'suggested' | 'day';
-export type WindowMode = 'widget' | 'settings';
-export type ActivePanel = null | 'taskDetail' | 'addTask' | 'energyCheckin';
+export type ActiveView = 'tasks' | 'suggested' | 'day' | 'settings';
+export type WindowMode = 'widget' | 'expanded';
+export type ActivePanel = null | 'taskDetail' | 'addTask' | 'energyCheckin' | 'quickStart';
 
 export interface ToastItem {
   id: string;
@@ -54,9 +54,9 @@ function createDefaultSubscription(): Subscription {
     status: 'active',
     trialStartedAt: now.toISOString(),
     trialEndsAt: trialEnd.toISOString(),
-    paddleSubscriptionId: null,
-    paddleCustomerId: null,
+    licenseKey: null,
     currentPeriodEnd: null,
+    lastValidatedAt: null,
   };
 }
 
@@ -145,6 +145,10 @@ interface ZapStore {
   // Subscription
   subscription: Subscription;
   setSubscription: (sub: Partial<Subscription>) => void;
+
+  // Upsell tracking
+  lastUpsellAt: string | null;
+  setLastUpsellAt: (date: string) => void;
 }
 
 export const useStore = create<ZapStore>()(
@@ -316,6 +320,10 @@ export const useStore = create<ZapStore>()(
       setSubscription: (sub) => set((s) => ({
         subscription: { ...s.subscription, ...sub },
       })),
+
+      // Upsell tracking
+      lastUpsellAt: null,
+      setLastUpsellAt: (date) => set({ lastUpsellAt: date }),
     }),
     {
       name: 'zaptask-store',
@@ -328,6 +336,7 @@ export const useStore = create<ZapStore>()(
         accentColor: state.accentColor,
         notificationsEnabled: state.notificationsEnabled,
         subscription: state.subscription,
+        lastUpsellAt: state.lastUpsellAt,
       }),
       merge: (persisted, current) => {
         const p = persisted as Partial<ZapStore> | undefined;

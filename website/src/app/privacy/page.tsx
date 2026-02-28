@@ -106,19 +106,18 @@ export default function PrivacyPage() {
               </h2>
               <p>
                 Payments for ZapTask Pro are processed by{" "}
-                <strong>Paddle.com</strong>, which acts as our Merchant of
-                Record. This means Paddle is the legal seller of ZapTask Pro
-                subscriptions. Paddle collects and processes all payment
-                information (credit card details, billing address) directly.
-                ZapTask never receives, stores, or has access to your payment
-                card details. For more information, see{" "}
+                <strong>Stripe</strong>. Stripe collects and processes all
+                payment information (credit card details, billing address)
+                directly. ZapTask never receives, stores, or has access to
+                your payment card details. Upon purchase, a license key is
+                generated and stored securely. For more information, see{" "}
                 <a
-                  href="https://www.paddle.com/legal/privacy"
+                  href="https://stripe.com/privacy"
                   className="text-zap hover:underline"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Paddle&apos;s Privacy Policy
+                  Stripe&apos;s Privacy Policy
                 </a>
                 .
               </p>

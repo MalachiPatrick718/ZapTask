@@ -23,9 +23,9 @@ const priorityConfig: Record<string, { label: string; color: string; bg: string 
 };
 
 const energyConfig: Record<string, { label: string; icon: string; color: string; bg: string }> = {
-  high: { label: 'High Energy', icon: '\u26A1', color: 'var(--energy-high)', bg: 'rgba(255, 149, 0, 0.12)' },
-  medium: { label: 'Med Energy', icon: '\uD83D\uDD0B', color: 'var(--energy-med)', bg: 'rgba(78, 205, 196, 0.12)' },
-  low: { label: 'Low Energy', icon: '\uD83C\uDF19', color: 'var(--energy-low)', bg: 'rgba(120, 120, 255, 0.12)' },
+  high: { label: 'Deep Focus', icon: '\uD83C\uDFAF', color: 'var(--energy-high)', bg: 'rgba(255, 149, 0, 0.12)' },
+  medium: { label: 'Medium', icon: '\u2699\uFE0F', color: 'var(--energy-med)', bg: 'rgba(78, 205, 196, 0.12)' },
+  low: { label: 'Low', icon: '\u2615', color: 'var(--energy-low)', bg: 'rgba(120, 120, 255, 0.12)' },
 };
 
 const sourceLabels: Record<string, { label: string; color: string }> = {
@@ -116,7 +116,6 @@ export function TaskCard({ task, onClick, onStatusChange, onAddToDay, onStartPom
     cursor: 'pointer',
     transition: 'all 150ms ease',
     transform: hovered ? 'translateY(-1px)' : 'none',
-    overflow: 'hidden',
   };
 
   return (
@@ -178,7 +177,7 @@ export function TaskCard({ task, onClick, onStatusChange, onAddToDay, onStartPom
         {/* Row 2: Pills + Due Date */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 6,
-          flexWrap: 'wrap', marginBottom: (task.status !== 'done' && (onAddToDay || onStartPomodoro)) ? 6 : 0,
+          flexWrap: 'wrap', marginBottom: (task.status !== 'done' && (onAddToDay || onStartPomodoro)) ? 8 : 0,
         }}>
           {/* Calendar event time */}
           {isCalendarEvent && task.startTime && (
@@ -247,7 +246,7 @@ export function TaskCard({ task, onClick, onStatusChange, onAddToDay, onStartPom
           <div style={{
             display: 'flex', alignItems: 'center',
             justifyContent: 'space-between',
-            paddingTop: 4,
+            paddingTop: 6,
             borderTop: '1px solid var(--border)',
           }}>
             {onAddToDay ? (
@@ -262,7 +261,7 @@ export function TaskCard({ task, onClick, onStatusChange, onAddToDay, onStartPom
                   cursor: 'pointer',
                 }}
               >
-                {'\uD83D\uDCCC'} Add to Today
+                {'\uD83D\uDCC5'} Schedule
               </button>
             ) : <span />}
 

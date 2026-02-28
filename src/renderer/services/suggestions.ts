@@ -34,14 +34,14 @@ function scoreTask(task: Task, currentEnergy: EnergyLevel): { score: number; rea
   if (task.energyRequired) {
     if (task.energyRequired === currentEnergy) {
       score += 40;
-      reasons.push('Energy match');
+      reasons.push('Focus match');
     } else if (energyMatches(currentEnergy, task.energyRequired)) {
       score += 25;
-      reasons.push('Compatible energy');
+      reasons.push('Focus compatible');
     }
     // mismatch = 0 pts
   } else {
-    // No energy set — give a base score so it's not completely hidden
+    // No focus set — give a base score so it's not completely hidden
     score += 15;
   }
 

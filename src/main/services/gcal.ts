@@ -9,7 +9,7 @@ export class GCalService implements IntegrationService {
   }
 
   async fetchTasks(accessToken: string): Promise<Task[]> {
-    if (!accessToken) return this.stubTasks();
+    if (!accessToken) return [];
 
     try {
       const now = new Date();
@@ -66,37 +66,7 @@ export class GCalService implements IntegrationService {
       });
     } catch (err) {
       console.error('[GCal] API error:', err);
-      return this.stubTasks();
+      return [];
     }
-  }
-
-  private stubTasks(): Task[] {
-    const now = new Date().toISOString();
-    const today = new Date().toISOString().split('T')[0];
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-    return [
-      {
-        id: 'gcal-001', title: 'Team standup',
-        description: 'Daily sync with the engineering team', source: 'gcal',
-        sourceId: 'evt-standup-001', sourceUrl: 'https://calendar.google.com/event?eid=standup001',
-        category: 'work', status: 'todo', priority: 'medium', energyRequired: null,
-        estimatedMinutes: 15, dueDate: today, tags: ['meeting'],
-        notes: [], createdAt: now, updatedAt: now, syncedAt: now,
-        startTime: `${today}T09:00:00`, endTime: `${today}T09:15:00`,
-        location: null, conferenceUrl: 'https://meet.google.com/abc-defg-hij',
-        recurrenceRule: null, recurrenceParentId: null,
-      },
-      {
-        id: 'gcal-002', title: 'Dentist appointment',
-        description: null, source: 'gcal',
-        sourceId: 'evt-dentist-001', sourceUrl: 'https://calendar.google.com/event?eid=dentist001',
-        category: 'personal', status: 'todo', priority: null, energyRequired: null,
-        estimatedMinutes: 60, dueDate: tomorrow, tags: [],
-        notes: [], createdAt: now, updatedAt: now, syncedAt: now,
-        startTime: `${tomorrow}T14:00:00`, endTime: `${tomorrow}T15:00:00`,
-        location: '123 Main St, Suite 200', conferenceUrl: null,
-        recurrenceRule: null, recurrenceParentId: null,
-      },
-    ];
   }
 }

@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { addDays, format, startOfWeek } from 'date-fns';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { addDays, format } from 'date-fns';
 import { useStore } from '../store';
 import { TaskCard } from './shared/TaskCard';
 import { scheduleTaskIntoDay } from '../services/scheduler';
@@ -59,6 +59,25 @@ export function DayView() {
   const [showSummary, setShowSummary] = useState(false);
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const selectedStr = format(selectedDate, 'yyyy-MM-dd');
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const todayRef = useRef<HTMLButtonElement>(null);
+
+  const DAYS_BACK = 7;
+  const DAYS_FORWARD = 13;
+  const TOTAL_DAYS = DAYS_BACK + 1 + DAYS_FORWARD;
+
+  const dateStrip = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Array.from({ length: TOTAL_DAYS }, (_, i) => addDays(today, i - DAYS_BACK));
+  }, [todayStr]); // recalc when day changes
+
+  // Auto-scroll to today on mount
+  useEffect(() => {
+    if (todayRef.current) {
+      todayRef.current.scrollIntoView({ inline: 'center', block: 'nearest' });
+    }
+  }, []);
 
   // Update "now" line every minute
   useEffect(() => {
@@ -161,81 +180,115 @@ export function DayView() {
                 : `${totalItems} task${totalItems !== 1 ? 's' : ''} for this day`}
             </div>
           </div>
-          <button
-            onClick={() => canUseDaySummary() ? setShowSummary(true) : window.dispatchEvent(new CustomEvent('zaptask:showPricing'))}
-            style={{
-              padding: '4px 10px', fontSize: 12,
-              fontFamily: 'var(--font-mono)',
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-sm)',
-              color: canUseDaySummary() ? 'var(--accent)' : 'var(--text3)',
-              cursor: 'pointer', flexShrink: 0,
-              marginTop: 2,
-              display: 'flex', alignItems: 'center', gap: 4,
-            }}
-          >
-            Summary {!canUseDaySummary() && <ProBadge />}
-          </button>
-        </div>
-
-        {/* Week strip */}
-        <div style={{
-          display: 'flex',
-          gap: 6,
-          marginTop: 10,
-        }}>
-          {Array.from({ length: 7 }).map((_, idx) => {
-            const start = startOfWeek(now, { weekStartsOn: 0 });
-            const day = addDays(start, idx);
-            const dayStr = format(day, 'yyyy-MM-dd');
-            const isToday = dayStr === todayStr;
-            const isSelected = dayStr === selectedStr;
-            // Count unique tasks for this day (due + scheduled, no double-counting)
-            const dueIds = tasks.filter((t) => t.dueDate === dayStr && t.status !== 'done').map((t) => t.id);
-            const scheduledIds = schedule.filter((b) => b.date === dayStr && tasks.some((t) => t.id === b.taskId)).map((b) => b.taskId);
-            const dayItemCount = new Set([...dueIds, ...scheduledIds]).size;
-
-            const bg = isSelected ? 'var(--accent)' : isToday ? 'var(--surface-high)' : 'var(--surface)';
-            const fg = isSelected ? '#fff' : 'var(--text1)';
-
-            return (
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0, marginTop: 2 }}>
+            {!isTodaySelected && (
               <button
-                key={dayStr}
-                type="button"
-                onClick={() => setSelectedDate(day)}
+                onClick={() => {
+                  setSelectedDate(new Date());
+                  setTimeout(() => {
+                    todayRef.current?.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+                  }, 50);
+                }}
                 style={{
-                  flex: 1,
-                  padding: '6px 4px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: `1px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`,
-                  background: bg,
-                  color: fg,
-                  fontSize: 11,
+                  padding: '4px 10px', fontSize: 12,
                   fontFamily: 'var(--font-mono)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 2,
+                  background: 'var(--accent-dim)',
+                  border: '1px solid var(--accent)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--accent)',
                   cursor: 'pointer',
-                  position: 'relative',
+                  fontWeight: 600,
                 }}
               >
-                <span style={{ opacity: 0.8 }}>{format(day, 'EEE')}</span>
-                <span>{format(day, 'd')}</span>
-                {dayItemCount > 0 && (
-                  <span style={{
-                    fontSize: 8,
-                    color: isSelected ? 'rgba(255,255,255,0.8)' : 'var(--accent)',
-                    fontWeight: 600,
-                    whiteSpace: 'nowrap',
-                  }}>
-                    {dayItemCount} task{dayItemCount !== 1 ? 's' : ''}
-                  </span>
-                )}
+                Today
               </button>
-            );
-          })}
+            )}
+            <button
+              onClick={() => canUseDaySummary() ? setShowSummary(true) : window.dispatchEvent(new CustomEvent('zaptask:showPricing'))}
+              style={{
+                padding: '4px 10px', fontSize: 12,
+                fontFamily: 'var(--font-mono)',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                color: canUseDaySummary() ? 'var(--accent)' : 'var(--text3)',
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 4,
+              }}
+            >
+              Summary {!canUseDaySummary() && <ProBadge />}
+            </button>
+          </div>
+        </div>
+
+        {/* Scrollable date strip */}
+        <div style={{ position: 'relative', marginTop: 10 }}>
+          <div
+            ref={scrollRef}
+            style={{
+              display: 'flex',
+              gap: 6,
+              overflowX: 'auto',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              scrollBehavior: 'smooth',
+              paddingBottom: 2,
+            }}
+          >
+            {dateStrip.map((day) => {
+              const dayStr = format(day, 'yyyy-MM-dd');
+              const isToday = dayStr === todayStr;
+              const isSelected = dayStr === selectedStr;
+              const dueIds = tasks.filter((t) => t.dueDate === dayStr && t.status !== 'done').map((t) => t.id);
+              const scheduledIds = schedule.filter((b) => b.date === dayStr && tasks.some((t) => t.id === b.taskId)).map((b) => b.taskId);
+              const calIds = tasks.filter((t) => {
+                if (!['gcal', 'outlook', 'apple_cal'].includes(t.source) || !t.startTime) return false;
+                return t.startTime.slice(0, 10) === dayStr;
+              }).map((t) => t.id);
+              const dayItemCount = new Set([...dueIds, ...scheduledIds, ...calIds]).size;
+
+              const bg = isSelected ? 'var(--accent)' : isToday ? 'var(--surface-high)' : 'var(--surface)';
+              const fg = isSelected ? '#fff' : 'var(--text1)';
+
+              return (
+                <button
+                  key={dayStr}
+                  ref={isToday ? todayRef : undefined}
+                  type="button"
+                  onClick={() => setSelectedDate(day)}
+                  style={{
+                    minWidth: 48,
+                    width: 48,
+                    padding: '6px 4px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: `1px solid ${isSelected ? 'var(--accent)' : isToday ? 'var(--accent-dim, var(--border))' : 'var(--border)'}`,
+                    background: bg,
+                    color: fg,
+                    fontSize: 11,
+                    fontFamily: 'var(--font-mono)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 2,
+                    cursor: 'pointer',
+                    position: 'relative',
+                    flexShrink: 0,
+                  }}
+                >
+                  <span style={{ opacity: 0.8 }}>{format(day, 'EEE')}</span>
+                  <span style={{ fontWeight: isToday ? 700 : 500 }}>{format(day, 'd')}</span>
+                  {dayItemCount > 0 && (
+                    <div style={{
+                      width: 5,
+                      height: 5,
+                      borderRadius: '50%',
+                      background: isSelected ? 'rgba(255,255,255,0.8)' : 'var(--accent)',
+                    }} />
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 

@@ -1,12 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSubscription } from '../hooks/useSubscription';
 import { Btn } from './shared/Btn';
-
-declare global {
-  interface Window {
-    Paddle?: any;
-  }
-}
 
 const features = [
   { name: 'Local tasks', free: true, pro: true },
@@ -20,30 +14,19 @@ const features = [
   { name: 'Day summary export', free: false, pro: true },
 ];
 
-interface PaddleConfig {
-  clientToken: string;
-  priceIdMonthly: string;
-  priceIdYearly: string;
-}
-
-function loadPaddleScript(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (window.Paddle) { resolve(); return; }
-    const script = document.createElement('script');
-    script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js';
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Failed to load Paddle.js'));
-    document.head.appendChild(script);
-  });
+interface LicenseConfig {
+  checkoutBaseUrl: string;
 }
 
 export function PricingModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [billing, setBilling] = useState<'monthly' | 'yearly'>('yearly');
-  const [paddleConfig, setPaddleConfig] = useState<PaddleConfig | null>(null);
+  const [config, setConfig] = useState<LicenseConfig | null>(null);
+  const [licenseKey, setLicenseKey] = useState('');
+  const [showKeyInput, setShowKeyInput] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const paddleInitialized = useRef(false);
+  const [success, setSuccess] = useState(false);
   const { isPro, isTrialActive, daysRemaining, setSubscription } = useSubscription();
 
   // Listen for global open event
@@ -53,87 +36,84 @@ export function PricingModal() {
     return () => window.removeEventListener('zaptask:showPricing', handler);
   }, []);
 
-  // Load Paddle config + script when modal opens
+  // Load license config when modal opens
   useEffect(() => {
-    if (!isOpen || paddleInitialized.current) return;
-    let cancelled = false;
-
+    if (!isOpen) return;
     (async () => {
       try {
-        const config = await window.zaptask.paddle.getConfig();
-        if (cancelled) return;
-        setPaddleConfig(config);
-
-        if (!config.clientToken) return; // No Paddle config — fallback to simulated
-
-        await loadPaddleScript();
-        if (cancelled || !window.Paddle) return;
-
-        window.Paddle.Initialize({
-          token: config.clientToken,
-          eventCallback: (event: any) => {
-            if (event.name === 'checkout.completed') {
-              const data = event.data;
-              setSubscription({
-                tier: 'pro',
-                status: 'active',
-                paddleSubscriptionId: data?.subscription_id || data?.id || 'paddle_sub',
-                paddleCustomerId: data?.customer?.id || null,
-                currentPeriodEnd: data?.current_billing_period?.ends_at || null,
-              });
-              setIsOpen(false);
-            }
-          },
-        });
-        paddleInitialized.current = true;
-      } catch (err) {
-        if (!cancelled) {
-          console.error('[Paddle] Init error:', err);
-          setError('Could not load payment system');
-        }
+        const cfg = await window.zaptask.license.getConfig();
+        setConfig(cfg);
+      } catch {
+        // Config not available — key input still works
       }
     })();
+  }, [isOpen]);
 
-    return () => { cancelled = true; };
-  }, [isOpen, setSubscription]);
+  const openCheckout = useCallback((trial: boolean) => {
+    if (config?.checkoutBaseUrl) {
+      const url = `${config.checkoutBaseUrl}?plan=${billing}${trial ? '&trial=true' : ''}`;
+      window.zaptask.openUrl(url);
+      setShowKeyInput(true);
+    } else {
+      setError('Checkout not configured. Enter a license key to activate.');
+      setShowKeyInput(true);
+    }
+  }, [billing, config]);
 
-  const handleSubscribe = useCallback(() => {
-    setError(null);
+  const handleSubscribe = useCallback(() => openCheckout(false), [openCheckout]);
+  const handleStartTrial = useCallback(() => openCheckout(true), [openCheckout]);
 
-    // If Paddle is loaded and configured, open real checkout
-    if (window.Paddle && paddleConfig?.clientToken) {
-      setLoading(true);
-      const priceId = billing === 'monthly'
-        ? paddleConfig.priceIdMonthly
-        : paddleConfig.priceIdYearly;
-
-      try {
-        window.Paddle.Checkout.open({
-          items: [{ priceId, quantity: 1 }],
-        });
-      } catch (err) {
-        console.error('[Paddle] Checkout error:', err);
-        setError('Could not open checkout. Please try again.');
-      }
-      setLoading(false);
+  const handleActivateKey = useCallback(async () => {
+    const key = licenseKey.trim();
+    if (!key) {
+      setError('Please enter a license key.');
       return;
     }
 
-    // Fallback: simulated upgrade (no Paddle keys configured)
-    setSubscription({
-      tier: 'pro',
-      status: 'active',
-      paddleSubscriptionId: 'sim_' + crypto.randomUUID().slice(0, 8),
-      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    });
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await window.zaptask.license.validate(key);
+
+      if (result.valid) {
+        setSubscription({
+          tier: 'pro',
+          status: 'active',
+          licenseKey: key,
+          currentPeriodEnd: result.expiresAt ?? null,
+          lastValidatedAt: new Date().toISOString(),
+        });
+        setSuccess(true);
+        setTimeout(() => {
+          setIsOpen(false);
+          setSuccess(false);
+          setLicenseKey('');
+          setShowKeyInput(false);
+        }, 1500);
+      } else {
+        setError(result.error || 'Invalid license key. Please check and try again.');
+      }
+    } catch {
+      setError('Could not validate key. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [licenseKey, setSubscription]);
+
+  const handleClose = () => {
     setIsOpen(false);
-  }, [billing, paddleConfig, setSubscription]);
+    setError(null);
+    setSuccess(false);
+    setLicenseKey('');
+    setShowKeyInput(false);
+  };
 
   if (!isOpen) return null;
 
   return (
     <div
-      onClick={() => setIsOpen(false)}
+      onClick={handleClose}
       style={{
         position: 'fixed',
         inset: 0,
@@ -272,17 +252,111 @@ export function PricingModal() {
           </div>
         )}
 
+        {/* Success */}
+        {success && (
+          <div style={{
+            padding: '8px 12px', marginBottom: 12,
+            background: 'color-mix(in srgb, var(--green) 10%, transparent)',
+            border: '1px solid var(--green)',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: 12, color: 'var(--green)',
+            textAlign: 'center',
+          }}>
+            {'\u2713'} Pro activated! Enjoy ZapTask Pro.
+          </div>
+        )}
+
+        {/* License key input */}
+        {showKeyInput && !success && (
+          <div style={{
+            padding: '14px',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-md)',
+            marginBottom: 12,
+          }}>
+            <div style={{
+              fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text2)',
+              marginBottom: 8,
+            }}>
+              Paste your license key after completing checkout:
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="text"
+                value={licenseKey}
+                onChange={(e) => setLicenseKey(e.target.value)}
+                placeholder="ZT-XXXX-XXXX-XXXX-XXXX"
+                style={{
+                  flex: 1,
+                  padding: '8px 12px',
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  color: 'var(--text1)',
+                  fontSize: 13,
+                  fontFamily: 'var(--font-mono)',
+                  letterSpacing: 1,
+                }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleActivateKey(); }}
+              />
+              <Btn onClick={handleActivateKey} disabled={loading || !licenseKey.trim()} size="sm">
+                {loading ? 'Validating...' : 'Activate'}
+              </Btn>
+            </div>
+          </div>
+        )}
+
         {/* CTA */}
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Btn variant="secondary" onClick={() => setIsOpen(false)} style={{ flex: 1 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {!isPro && !success && (
+            <>
+              <Btn onClick={handleStartTrial} style={{ width: '100%' }}>
+                Start 14-Day Free Trial
+              </Btn>
+              <Btn variant="secondary" onClick={handleSubscribe} style={{ width: '100%' }}>
+                Subscribe Now
+              </Btn>
+            </>
+          )}
+          <Btn variant="secondary" onClick={handleClose} style={{ width: '100%' }}>
             Maybe Later
           </Btn>
-          {!isPro && (
-            <Btn onClick={handleSubscribe} disabled={loading} style={{ flex: 2 }}>
-              {loading ? 'Opening checkout...' : isTrialActive ? 'Subscribe Now' : 'Start Pro Subscription'}
-            </Btn>
-          )}
         </div>
+
+        {/* Have a key link */}
+        {!showKeyInput && !isPro && (
+          <button
+            onClick={() => setShowKeyInput(true)}
+            style={{
+              display: 'block',
+              width: '100%',
+              marginTop: 12,
+              padding: 0,
+              background: 'none',
+              border: 'none',
+              color: 'var(--text3)',
+              fontSize: 12,
+              fontFamily: 'var(--font-mono)',
+              cursor: 'pointer',
+              textAlign: 'center',
+            }}
+          >
+            I have a license key
+          </button>
+        )}
+
+        {!isPro && !success && (
+          <p style={{
+            fontSize: 11,
+            color: 'var(--text3)',
+            textAlign: 'center',
+            marginTop: 12,
+            lineHeight: 1.4,
+          }}>
+            Your card won't be charged during the 14-day trial. Cancel anytime.
+          </p>
+        )}
       </div>
     </div>
   );

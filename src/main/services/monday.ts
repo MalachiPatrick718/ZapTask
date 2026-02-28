@@ -23,7 +23,7 @@ export class MondayService implements IntegrationService {
   }
 
   async fetchTasks(accessToken: string): Promise<Task[]> {
-    if (!accessToken) return this.stubTasks();
+    if (!accessToken) return [];
 
     try {
       // Monday.com uses GraphQL
@@ -104,23 +104,7 @@ export class MondayService implements IntegrationService {
       return tasks;
     } catch (err) {
       console.error('[Monday] API error:', err);
-      return this.stubTasks();
+      return [];
     }
-  }
-
-  private stubTasks(): Task[] {
-    const now = new Date().toISOString();
-    const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
-    return [
-      {
-        id: 'monday-001', title: 'Sprint planning prep',
-        description: 'Prepare agenda and backlog items for sprint planning',
-        source: 'monday', sourceId: '1234', sourceUrl: 'https://monday.com',
-        category: 'work', status: 'todo', priority: 'high', energyRequired: null,
-        estimatedMinutes: 30, dueDate: tomorrow, tags: ['Sprint Board'],
-        notes: [], createdAt: now, updatedAt: now, syncedAt: now,
-        startTime: null, endTime: null, location: null, conferenceUrl: null, recurrenceRule: null, recurrenceParentId: null,
-      },
-    ];
   }
 }

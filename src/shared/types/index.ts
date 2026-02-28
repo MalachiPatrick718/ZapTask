@@ -99,9 +99,17 @@ export interface Subscription {
   status: SubscriptionStatus;
   trialStartedAt: string;          // ISO date
   trialEndsAt: string;             // ISO date (trialStartedAt + 14 days)
-  paddleSubscriptionId: string | null;
-  paddleCustomerId: string | null;
+  licenseKey: string | null;
   currentPeriodEnd: string | null;  // ISO date
+  lastValidatedAt: string | null;  // ISO date — for offline grace period
+}
+
+export interface LicenseValidationResult {
+  valid: boolean;
+  tier: SubscriptionTier;
+  expiresAt: string | null;
+  email: string | null;
+  error?: string;
 }
 
 export const FREE_LIMITS = {

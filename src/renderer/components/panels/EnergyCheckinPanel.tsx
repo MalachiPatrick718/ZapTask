@@ -2,9 +2,9 @@ import { useStore, getCurrentEnergy } from '../../store';
 import type { EnergyLevel } from '../../../shared/types';
 
 const levels: { value: EnergyLevel; icon: string; label: string; desc: string; color: string }[] = [
-  { value: 'high', icon: '\u26A1', label: 'High', desc: 'Deep work, complex problem solving, creative tasks', color: 'var(--energy-high)' },
-  { value: 'medium', icon: '\uD83D\uDD0B', label: 'Medium', desc: 'Meetings, reviews, emails, collaborative work', color: 'var(--energy-med)' },
-  { value: 'low', icon: '\uD83C\uDF19', label: 'Low', desc: 'Admin, easy tasks, reading, planning', color: 'var(--energy-low)' },
+  { value: 'high', icon: '\u26A1', label: 'High', desc: 'Ready for deep focus work and complex tasks', color: 'var(--energy-high)' },
+  { value: 'medium', icon: '\uD83D\uDD0B', label: 'Medium', desc: 'Good for medium-effort tasks, reviews, and collaboration', color: 'var(--energy-med)' },
+  { value: 'low', icon: '\uD83C\uDF19', label: 'Low', desc: 'Best for low-effort tasks, admin, and light work', color: 'var(--energy-low)' },
 ];
 
 export function EnergyCheckinPanel() {

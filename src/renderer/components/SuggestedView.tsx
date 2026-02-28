@@ -239,7 +239,7 @@ export function SuggestedView() {
             padding: '20px 14px', textAlign: 'center',
             color: 'var(--text3)', fontSize: 13,
           }}>
-            No tasks match your current energy. Try a different energy level or check Coming Up below.
+            No tasks match your current energy. Try a different energy level or check below.
           </div>
         )}
 

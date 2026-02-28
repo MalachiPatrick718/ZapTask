@@ -1,8 +1,9 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useStore } from '../store';
 import { TaskCard } from './shared/TaskCard';
+import { EnergySetModal } from './shared/EnergySetModal';
 import { scheduleTaskIntoDay } from '../services/scheduler';
-import type { Task, TaskSource } from '../../shared/types';
+import type { EnergyLevel, Task, TaskSource } from '../../shared/types';
 
 function to12h(time: string): string {
   const [h, m] = time.split(':').map(Number);
@@ -38,6 +39,7 @@ export function TasksView() {
   const [category, setCategory] = useState<CategoryFilter>('all');
   const [status, setStatus] = useState<StatusFilter>('all');
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
+  const [showEnergyModal, setShowEnergyModal] = useState(false);
 
   // Listen for Cmd+F focus event from App.tsx
   useEffect(() => {
@@ -49,7 +51,16 @@ export function TasksView() {
     return () => window.removeEventListener('zaptask:focusSearch', handleFocus);
   }, []);
 
-  const uncategorizedCount = tasks.filter((t) => t.energyRequired === null && t.status !== 'done').length;
+  const uncategorizedTasks = useMemo(
+    () => tasks.filter((t) => t.energyRequired === null && t.status !== 'done'),
+    [tasks],
+  );
+  const uncategorizedCount = uncategorizedTasks.length;
+
+  const handleSetEnergy = useCallback(async (taskId: string, energy: EnergyLevel) => {
+    const result = await window.zaptask.tasks.update(taskId, { energyRequired: energy });
+    if (result.success) updateTask(taskId, { energyRequired: energy });
+  }, [updateTask]);
 
   const filtered = useMemo(() => {
     let result = tasks;
@@ -241,12 +252,40 @@ export function TasksView() {
           borderRadius: 'var(--radius-sm)',
           fontSize: 13,
           color: 'var(--yellow)',
-          cursor: 'pointer',
-        }}
-          onClick={() => { setStatus('all'); setCategory('all'); }}
-        >
-          {'\u26A1'} {uncategorizedCount} task{uncategorizedCount > 1 ? 's' : ''} need an energy level — they won't appear in Suggested until set
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+        }}>
+          <span>
+            {'\uD83C\uDFAF'} {uncategorizedCount} task{uncategorizedCount > 1 ? 's' : ''} need a focus level
+          </span>
+          <button
+            onClick={() => setShowEnergyModal(true)}
+            style={{
+              padding: '3px 10px',
+              background: 'rgba(255, 209, 102, 0.15)',
+              border: '1px solid rgba(255, 209, 102, 0.3)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--yellow)',
+              fontSize: 12,
+              fontWeight: 600,
+              fontFamily: 'var(--font-mono)',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            Set
+          </button>
         </div>
+      )}
+
+      {showEnergyModal && uncategorizedTasks.length > 0 && (
+        <EnergySetModal
+          tasks={uncategorizedTasks}
+          onSetEnergy={handleSetEnergy}
+          onClose={() => setShowEnergyModal(false)}
+        />
       )}
 
       {/* Task list */}

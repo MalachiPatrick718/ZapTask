@@ -59,4 +59,6 @@ export const OAUTH_PROVIDERS: Record<string, OAuthProviderConfig> = {
   },
 };
 
-export const REDIRECT_URI = 'zaptask://oauth/callback';
+export function getRedirectUri(port: number): string {
+  return `http://localhost:${port}/callback`;
+}

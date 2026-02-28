@@ -63,7 +63,7 @@ export default function CookiesPage() {
               </h3>
               <p>
                 These are strictly necessary for the website to function. They
-                may include cookies set by our hosting provider (Netlify) for
+                may include cookies set by our hosting provider (Vercel) for
                 load balancing and security purposes. These cookies do not track
                 your browsing activity and cannot be disabled.
               </p>
@@ -84,17 +84,17 @@ export default function CookiesPage() {
                 3. Payment Processor Cookies
               </h2>
               <p>
-                When you initiate a purchase through our payment processor,
-                Paddle.com, their checkout overlay may set cookies on your device
-                for fraud prevention, session management, and to process your
+                When you initiate a purchase, you are redirected to Stripe&apos;s
+                hosted checkout page. Stripe may set cookies on your device for
+                fraud prevention, session management, and to process your
                 transaction. These cookies are governed by{" "}
                 <a
-                  href="https://www.paddle.com/legal/cookies"
+                  href="https://stripe.com/cookies-policy/legal"
                   className="text-zap hover:underline"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Paddle&apos;s Cookie Policy
+                  Stripe&apos;s Cookie Policy
                 </a>
                 .
               </p>

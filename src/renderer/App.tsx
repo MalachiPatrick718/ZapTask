@@ -13,18 +13,19 @@ import { PomodoroBar } from './components/PomodoroBar';
 import { PricingModal } from './components/PricingModal';
 import { useStore, type ActiveView } from './store';
 import { useSubscription } from './hooks/useSubscription';
+import { useLicenseValidation } from './hooks/useLicenseValidation';
+import { useProUpsell } from './hooks/useProUpsell';
 
 // Tab icons (settings is accessed via TitleBar gear, not bottom nav)
 const tabs: { id: ActiveView; label: string; icon: string }[] = [
   { id: 'tasks', label: 'Tasks', icon: '\u2611' },
   { id: 'suggested', label: 'Suggested', icon: '\u26A1' },
-  { id: 'day', label: 'Today', icon: '\uD83D\uDCC5' },
+  { id: 'day', label: 'Schedule', icon: '\uD83D\uDCC5' },
 ];
 
 function BottomNav() {
   const activeView = useStore((s) => s.activeView);
   const setActiveView = useStore((s) => s.setActiveView);
-  const windowMode = useStore((s) => s.windowMode);
   const tasks = useStore((s) => s.tasks);
   const schedule = useStore((s) => s.schedule);
   const { canUseEnergyScheduling } = useSubscription();
@@ -43,8 +44,8 @@ function BottomNav() {
     return ids.size;
   }, [tasks, schedule, todayStr]);
 
-  // Hide bottom nav in settings mode (after all hooks)
-  if (windowMode === 'settings') return null;
+  // Hide bottom nav in settings view (after all hooks)
+  if (activeView === 'settings') return null;
 
   return (
     <nav style={{
@@ -122,27 +123,20 @@ function BottomNav() {
 
 function MainContent() {
   const activeView = useStore((s) => s.activeView);
-  const windowMode = useStore((s) => s.windowMode);
-
-  // Settings mode takes over the entire content area
-  if (windowMode === 'settings') {
-    return (
-      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-        <SettingsView />
-      </div>
-    );
-  }
 
   return (
     <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       {activeView === 'tasks' && <TasksView />}
       {activeView === 'suggested' && <SuggestedView />}
       {activeView === 'day' && <DayView />}
+      {activeView === 'settings' && <SettingsView />}
     </div>
   );
 }
 
 export function App() {
+  useLicenseValidation();
+  useProUpsell();
   const onboardingComplete = useStore((s) => s.onboardingComplete);
   const theme = useStore((s) => s.theme);
   const setTasks = useStore((s) => s.setTasks);
@@ -174,7 +168,7 @@ export function App() {
   const selectTask = useStore((s) => s.selectTask);
   const setActivePanel = useStore((s) => s.setActivePanel);
   const setActiveView = useStore((s) => s.setActiveView);
-  const windowMode = useStore((s) => s.windowMode);
+  const setWindowMode = useStore((s) => s.setWindowMode);
 
   // In-app keyboard shortcuts
   useEffect(() => {
@@ -185,7 +179,8 @@ export function App() {
       // Cmd+N — New task
       if (e.key === 'n' && !e.shiftKey) {
         e.preventDefault();
-        if (windowMode !== 'settings') {
+        const view = useStore.getState().activeView;
+        if (view !== 'settings') {
           setActiveView('tasks');
           setActivePanel('addTask');
         }
@@ -194,16 +189,31 @@ export function App() {
       // Cmd+F — Focus search
       if (e.key === 'f' && !e.shiftKey) {
         e.preventDefault();
-        if (windowMode !== 'settings') {
+        const view = useStore.getState().activeView;
+        if (view !== 'settings') {
           setActiveView('tasks');
           window.dispatchEvent(new CustomEvent('zaptask:focusSearch'));
         }
+      }
+
+      // Cmd+? — Quick Start Guide
+      if (e.key === '/' && e.shiftKey) {
+        e.preventDefault();
+        setActivePanel('quickStart');
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setActiveView, setActivePanel, windowMode]);
+  }, [setActiveView, setActivePanel]);
+
+  // Listen for expand/collapse changes from main process (global shortcut)
+  useEffect(() => {
+    const cleanup = window.zaptask.onExpandChanged((expanded: boolean) => {
+      setWindowMode(expanded ? 'expanded' : 'widget');
+    });
+    return cleanup;
+  }, [setWindowMode]);
   useEffect(() => {
     const cleanup = window.zaptask.onNavigateToTask((taskId: string) => {
       if (taskId === '__energy_checkin__') {
@@ -216,6 +226,46 @@ export function App() {
     });
     return cleanup;
   }, [selectTask, setActivePanel, setActiveView]);
+
+  // Listen for synced tasks from integrations (gcal, jira, notion, etc.)
+  const addTask = useStore((s) => s.addTask);
+  const updateTask = useStore((s) => s.updateTask);
+  const updateToolSync = useStore((s) => s.updateToolSync);
+  useEffect(() => {
+    if (!onboardingComplete) return;
+    const cleanupSync = window.zaptask.onSyncTasks(async (data: { source: string; tasks: any[] }) => {
+      const currentTasks = useStore.getState().tasks;
+      const existingById = new Map(currentTasks.map((t) => [t.id, t]));
+
+      // Fields the user sets locally — never overwrite with null from integrations
+      const userFields = ['energyRequired', 'priority', 'estimatedMinutes', 'category'] as const;
+
+      for (const task of data.tasks) {
+        const existing = existingById.get(task.id);
+        if (existing) {
+          // Merge: keep user-set fields if the sync data has null
+          const merged: Record<string, any> = { ...task };
+          for (const field of userFields) {
+            if (merged[field] == null && existing[field] != null) {
+              merged[field] = existing[field];
+            }
+          }
+          updateTask(task.id, merged);
+          window.zaptask.tasks.update(task.id, merged).catch(() => {});
+        } else {
+          addTask(task);
+          window.zaptask.tasks.create(task).catch(() => {});
+        }
+      }
+    });
+    const cleanupStatus = window.zaptask.onSyncStatus?.((data: { toolId: string; status: string; lastSyncAt?: string; error?: string }) => {
+      updateToolSync(data.toolId, data.status as any, data.lastSyncAt, data.error);
+    });
+    return () => {
+      cleanupSync();
+      cleanupStatus?.();
+    };
+  }, [onboardingComplete, addTask, updateTask, updateToolSync]);
 
   // Load tasks from SQLite on startup
   useEffect(() => {

@@ -3,6 +3,7 @@ import { useStore } from '../../store';
 import { AddTaskPanel } from './AddTaskPanel';
 import { TaskDetailPanel } from './TaskDetailPanel';
 import { EnergyCheckinPanel } from './EnergyCheckinPanel';
+import { QuickStartPanel } from './QuickStartPanel';
 
 export function PanelContainer() {
   const activePanel = useStore((s) => s.activePanel);
@@ -25,6 +26,7 @@ export function PanelContainer() {
   if (activePanel === 'addTask') content = <AddTaskPanel />;
   if (activePanel === 'taskDetail') content = <TaskDetailPanel />;
   if (activePanel === 'energyCheckin') content = <EnergyCheckinPanel />;
+  if (activePanel === 'quickStart') content = <QuickStartPanel />;
 
   return (
     <>

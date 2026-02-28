@@ -88,17 +88,17 @@ export default function TermsPage() {
                 </li>
               </ul>
               <p className="mb-3">
-                Pro subscriptions are billed through Paddle.com, which acts as
-                our Merchant of Record. Paddle&apos;s{" "}
+                Pro subscriptions are billed through Stripe. Stripe&apos;s{" "}
                 <a
-                  href="https://www.paddle.com/legal/terms"
+                  href="https://stripe.com/legal/consumer"
                   className="text-zap hover:underline"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  terms of sale
+                  terms of service
                 </a>{" "}
-                apply to all purchases.
+                apply to all payment processing. Upon purchase, you receive a
+                license key to activate Pro features in the desktop app.
               </p>
               <p className="mb-3">
                 <strong>Free trial:</strong> New Pro subscriptions include a
@@ -121,8 +121,7 @@ export default function TermsPage() {
               <p className="mb-3">
                 We want you to be happy with ZapTask. If you are not satisfied
                 with your Pro subscription, you may request a full refund within
-                14 days of any payment. Refunds are processed by our payment
-                provider, Paddle.com.
+                14 days of any payment. Refunds are processed through Stripe.
               </p>
               <p className="mb-3">
                 To request a refund, contact us at{" "}
