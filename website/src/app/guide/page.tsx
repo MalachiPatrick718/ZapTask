@@ -57,7 +57,7 @@ const sections = [
           "Theme toggle, pin to top, expand/collapse, settings gear, and minimize. Drag the bar to reposition.",
       },
       {
-        icon: "▢",
+        icon: "📋",
         title: "Slide-in Panels",
         description:
           "Task details, new task form, energy check-in, and quick start guide all slide in from the right. Press Esc to close.",
