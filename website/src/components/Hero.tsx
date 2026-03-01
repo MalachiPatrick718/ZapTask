@@ -31,7 +31,7 @@ export function Hero() {
           <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
             ZapTask isn&apos;t another to-do list. It learns when you&apos;re at peak
             energy and matches the right tasks to the right moments &mdash; pulling
-            from Jira, Asana, Monday.com, Notion, Google Calendar, Outlook,
+            from Jira, Asana, Monday.com, Notion, Todoist, Google Calendar, Outlook,
             and more into one desktop widget that actually understands how you work.
           </p>
         </FadeIn>

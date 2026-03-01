@@ -166,7 +166,7 @@ const sections = [
         icon: "🔐",
         title: "Connect Tools",
         description:
-          "Link Jira, Notion, Google Calendar, Outlook, Asana, Monday.com, and Apple Calendar via secure OAuth from Settings → Integrations.",
+          "Link Jira, Notion, Todoist, Google Calendar, Outlook, Asana, Monday.com, and Apple Calendar via secure OAuth from Settings → Integrations.",
       },
       {
         icon: "🔄",

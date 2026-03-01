@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ZapTask — Work with your energy, not against it.",
   description:
-    "ZapTask pulls tasks from Jira, Asana, Monday.com, Notion, Google Calendar, Outlook, and more into one desktop widget. Plan your day with energy-aware scheduling.",
+    "ZapTask pulls tasks from Jira, Asana, Monday.com, Notion, Todoist, Google Calendar, Outlook, and more into one desktop widget. Plan your day with energy-aware scheduling.",
   icons: {
     icon: "/icon.png",
     apple: "/icon.png",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "ZapTask — Work with your energy, not against it.",
     description:
-      "One desktop widget for all your tasks. Connect Jira, Asana, Monday.com, Notion, Google Calendar, Outlook, and more.",
+      "One desktop widget for all your tasks. Connect Jira, Asana, Monday.com, Notion, Todoist, Google Calendar, Outlook, and more.",
     type: "website",
   },
 };

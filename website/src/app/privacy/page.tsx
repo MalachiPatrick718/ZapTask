@@ -54,7 +54,7 @@ export default function PrivacyPage() {
                 <li>
                   <strong>Integration tokens:</strong> OAuth access and refresh
                   tokens for connected services (Jira, Asana, Monday.com,
-                  Notion, Google Calendar, Outlook). These are stored locally on
+                  Notion, Todoist, Google Calendar, Outlook). These are stored locally on
                   your device using encrypted storage.
                 </li>
                 <li>

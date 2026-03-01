@@ -7,6 +7,7 @@ const integrations = [
   { name: "Asana", color: "#F06A6A" },
   { name: "Monday.com", color: "#FF3D57" },
   { name: "Notion", color: "#000000" },
+  { name: "Todoist", color: "#E44332" },
   { name: "Google Calendar", color: "#4285F4" },
   { name: "Outlook", color: "#0078D4" },
 ];

@@ -43,7 +43,7 @@ export default function TermsPage() {
               <p>
                 ZapTask is a desktop widget application for macOS and Windows
                 that unifies tasks from multiple productivity platforms (Jira,
-                Asana, Monday.com, Notion, Google Calendar, Outlook) into a
+                Asana, Monday.com, Notion, Todoist, Google Calendar, Outlook) into a
                 single energy-aware planner. The application runs locally on your
                 device and stores your task data in a local database.
               </p>
@@ -174,7 +174,7 @@ export default function TermsPage() {
               </h2>
               <p>
                 ZapTask connects to third-party services including Jira, Asana,
-                Monday.com, Notion, Google Calendar, and Microsoft Outlook. Your
+                Monday.com, Notion, Todoist, Google Calendar, and Microsoft Outlook. Your
                 use of these services is governed by their respective terms of
                 service and privacy policies. ZapTask is not responsible for the
                 availability, accuracy, or content of third-party services.

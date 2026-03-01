@@ -19,7 +19,7 @@ const features = [
     icon: "\uD83D\uDD17",
     title: "Unified Task View",
     description:
-      "Pull tasks from Jira, Asana, Monday.com, Notion, Google Calendar, Outlook, and more into one place. No more tab-switching.",
+      "Pull tasks from Jira, Asana, Monday.com, Notion, Todoist, Google Calendar, Outlook, and more into one place. No more tab-switching.",
     bullets: [
       "Secure OAuth for every platform",
       "Real-time sync updates",
