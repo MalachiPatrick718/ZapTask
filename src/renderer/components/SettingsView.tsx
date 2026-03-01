@@ -945,19 +945,22 @@ function SupportTab() {
         Found a bug or have an idea? Let us know.
       </p>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 480 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 480 }}>
         {/* Canny feedback board */}
         <div style={{
-          padding: '14px',
+          padding: '16px',
           background: 'color-mix(in srgb, var(--accent) 5%, var(--surface))',
           border: '1px solid var(--accent)',
           borderRadius: 'var(--radius-md)',
         }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text1)', marginBottom: 4 }}>
-            Feature Requests & Feedback
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: 18 }}>{'\uD83D\uDCDD'}</span>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text1)' }}>
+              Submit Feedback
+            </div>
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10, lineHeight: 1.5 }}>
-            Vote on features, submit ideas, and track what we're building next on our public feedback board.
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12, lineHeight: 1.5 }}>
+            Report bugs, request features, and vote on what we build next. Your feedback shapes ZapTask.
           </div>
           <Btn
             size="sm"
@@ -968,9 +971,64 @@ function SupportTab() {
           </Btn>
         </div>
 
-        <div style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--font-mono)', textAlign: 'center' as const }}>
-          or send feedback via email
+        {/* Email support */}
+        <div style={{
+          padding: '16px',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: 18 }}>{'\u2709\uFE0F'}</span>
+            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text1)' }}>
+              Contact Support
+            </div>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12, lineHeight: 1.5 }}>
+            Need help with your account, billing, or a technical issue? Reach out directly.
+          </div>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            padding: '10px 14px',
+            background: 'var(--bg)',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--border)',
+            marginBottom: 10,
+          }}>
+            <span style={{ fontSize: 13, fontFamily: 'var(--font-mono)', color: 'var(--text2)', flex: 1 }}>
+              support@zaptask.io
+            </span>
+            <Btn
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                navigator.clipboard.writeText('support@zaptask.io');
+                addToast('Email copied to clipboard', 'success');
+              }}
+              style={{ flexShrink: 0, padding: '4px 10px', fontSize: 11 }}
+            >
+              Copy
+            </Btn>
+          </div>
+          <Btn
+            size="sm"
+            variant="secondary"
+            onClick={() => window.zaptask.app.openExternal('mailto:support@zaptask.io')}
+            style={{ width: '100%' }}
+          >
+            Send Email
+          </Btn>
         </div>
+
+        {/* Detailed feedback form */}
+        <details style={{ marginTop: 4 }}>
+          <summary style={{
+            fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--font-mono)',
+            cursor: 'pointer', textAlign: 'center' as const,
+          }}>
+            Or send detailed feedback with a screenshot
+          </summary>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16 }}>
 
         {/* Category */}
         <div>
@@ -1082,6 +1140,9 @@ function SupportTab() {
         >
           {submitting ? 'Opening email...' : 'Send Feedback'}
         </Btn>
+
+          </div>
+        </details>
       </div>
     </div>
   );
