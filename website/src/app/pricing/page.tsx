@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 const features = [
   { name: "Local task management", free: true, pro: true },
-  { name: "Timeboxing", free: true, pro: true },
+  { name: "Timeboxing", free: false, pro: true },
   { name: "Desktop widget", free: true, pro: true },
   { name: "Active tasks", free: "Up to 10", pro: "Unlimited" },
   { name: "Integrations", free: "1", pro: "Unlimited" },

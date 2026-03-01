@@ -4,7 +4,6 @@ import { Btn } from '../shared/Btn';
 const freeFeatures = [
   'Up to 10 active tasks',
   '1 integration',
-  'Timeboxing',
   'Desktop widget',
 ];
 
@@ -13,6 +12,7 @@ const proFeatures = [
   'Unlimited integrations',
   'Energy-aware scheduling',
   'Pomodoro timer',
+  'Timeboxing',
   'Day summary export',
   'Priority support',
 ];

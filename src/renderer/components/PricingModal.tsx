@@ -4,7 +4,7 @@ import { Btn } from './shared/Btn';
 
 const features = [
   { name: 'Local tasks', free: true, pro: true },
-  { name: 'Timeboxing', free: true, pro: true },
+  { name: 'Timeboxing', free: false, pro: true },
   { name: 'Up to 10 active tasks', free: true, pro: false },
   { name: 'Unlimited tasks', free: false, pro: true },
   { name: '1 integration', free: true, pro: false },

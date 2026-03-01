@@ -13,7 +13,6 @@ const plans = [
     features: [
       "Up to 10 active tasks",
       "1 integration",
-      "Timeboxing",
       "Desktop widget",
     ],
     cta: "Download Free",
@@ -28,6 +27,7 @@ const plans = [
     features: [
       "Unlimited tasks",
       "Unlimited integrations",
+      "Timeboxing",
       "Energy-aware scheduling",
       "Pomodoro timer",
       "Day summary export",
