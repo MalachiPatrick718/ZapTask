@@ -61,10 +61,21 @@ const api = {
       ipcRenderer.invoke(IPC.NOTIFICATION_SHOW, title, body, taskId),
   },
 
-  // App settings
+  // App settings & updates
   app: {
     getAutoLaunch: () => ipcRenderer.invoke(IPC.APP_GET_AUTO_LAUNCH),
     setAutoLaunch: (v: boolean) => ipcRenderer.invoke(IPC.APP_SET_AUTO_LAUNCH, v),
+    checkForUpdate: () => ipcRenderer.invoke(IPC.APP_CHECK_UPDATE),
+    downloadUpdate: () => ipcRenderer.invoke(IPC.APP_DOWNLOAD_UPDATE),
+    installUpdate: () => ipcRenderer.invoke(IPC.APP_INSTALL_UPDATE),
+    openExternal: (url: string) => ipcRenderer.invoke(IPC.APP_OPEN_EXTERNAL, url),
+  },
+
+  // Update status (main -> renderer)
+  onUpdateStatus: (cb: (data: { status: string; version?: string; releaseNotes?: string; downloadUrl?: string; progress?: number; error?: string }) => void) => {
+    const handler = (_e: Electron.IpcRendererEvent, data: any) => cb(data);
+    ipcRenderer.on(IPC.APP_UPDATE_STATUS, handler);
+    return () => { ipcRenderer.removeListener(IPC.APP_UPDATE_STATUS, handler); };
   },
 
   // Navigation (main -> renderer)

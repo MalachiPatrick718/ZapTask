@@ -5,10 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 
-const navLinks = [
+const navLinks: { label: string; href: string; external?: boolean }[] = [
   { label: "Features", href: "/#features" },
   { label: "Guide", href: "/guide" },
   { label: "Pricing", href: "/pricing" },
+  { label: "Feedback", href: "https://zaptask.canny.io", external: true },
   { label: "Download", href: "/download" },
 ];
 
@@ -38,15 +39,27 @@ export function Navbar() {
         </Link>
 
         <div className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <Link
-              key={link.label}
-              href={link.href}
-              className="text-sm font-medium text-gray-600 hover:text-foreground transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) =>
+            link.external ? (
+              <a
+                key={link.label}
+                href={link.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-gray-600 hover:text-foreground transition-colors"
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="text-sm font-medium text-gray-600 hover:text-foreground transition-colors"
+              >
+                {link.label}
+              </Link>
+            )
+          )}
           <Link
             href="/download"
             className="px-5 py-2 rounded-full bg-zap text-white text-sm font-semibold hover:bg-zap-dark transition-colors"
@@ -76,16 +89,29 @@ export function Navbar() {
             className="md:hidden overflow-hidden bg-white border-t border-border"
           >
             <div className="flex flex-col gap-1 px-6 py-4">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="py-2.5 text-sm font-medium text-gray-600 hover:text-foreground transition-colors"
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {navLinks.map((link) =>
+                link.external ? (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMobileOpen(false)}
+                    className="py-2.5 text-sm font-medium text-gray-600 hover:text-foreground transition-colors"
+                  >
+                    {link.label}
+                  </a>
+                ) : (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="py-2.5 text-sm font-medium text-gray-600 hover:text-foreground transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                )
+              )}
               <Link
                 href="/download"
                 onClick={() => setMobileOpen(false)}

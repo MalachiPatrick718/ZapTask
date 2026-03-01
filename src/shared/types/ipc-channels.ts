@@ -48,4 +48,11 @@ export const IPC = {
   FEEDBACK_CAPTURE_SCREENSHOT: 'feedback:captureScreenshot',
   FEEDBACK_SEND: 'feedback:send',
 
+  // Updates
+  APP_CHECK_UPDATE: 'app:checkUpdate',
+  APP_UPDATE_STATUS: 'app:updateStatus',
+  APP_DOWNLOAD_UPDATE: 'app:downloadUpdate',
+  APP_INSTALL_UPDATE: 'app:installUpdate',
+  APP_OPEN_EXTERNAL: 'app:openExternal',
+
 } as const;

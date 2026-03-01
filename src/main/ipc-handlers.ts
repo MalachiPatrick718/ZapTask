@@ -7,6 +7,7 @@ import { syncEngine } from './services/sync-engine';
 import { getTaskRepository } from './database';
 import { expandWindow, collapseWindow, toggleExpand, getMainWindow } from './window-manager';
 import { getCredentials, setCredentials, clearCredentials } from './credential-store';
+import { checkForUpdates, downloadUpdate, installUpdate } from './services/update-service';
 import type { Task, TaskSource } from '../shared/types';
 
 export function registerIpcHandlers(): void {
@@ -276,6 +277,43 @@ export function registerIpcHandlers(): void {
       console.error('[IPC] feedback:send error:', err);
       return { success: false, error: String(err) };
     }
+  });
+
+  // Updates
+  ipcMain.handle(IPC.APP_CHECK_UPDATE, async () => {
+    try {
+      await checkForUpdates();
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: String(err) };
+    }
+  });
+
+  ipcMain.handle(IPC.APP_DOWNLOAD_UPDATE, async () => {
+    try {
+      downloadUpdate();
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: String(err) };
+    }
+  });
+
+  ipcMain.handle(IPC.APP_INSTALL_UPDATE, async () => {
+    try {
+      installUpdate();
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: String(err) };
+    }
+  });
+
+  // Open external URL (validated)
+  ipcMain.handle(IPC.APP_OPEN_EXTERNAL, async (_event, url: string) => {
+    if (typeof url === 'string' && (url.startsWith('https://') || url.startsWith('http://'))) {
+      await shell.openExternal(url);
+      return { success: true };
+    }
+    return { success: false, error: 'Invalid URL' };
   });
 
 }

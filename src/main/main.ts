@@ -18,6 +18,7 @@ import { syncEngine } from './services/sync-engine';
 import { notificationScheduler } from './services/notification-scheduler';
 import { getDb, closeDb } from './database';
 import { getConnectedToolIds } from './credential-store';
+import { initAutoUpdater, stopUpdateChecks } from './services/update-service';
 
 // Handle Squirrel events on Windows
 if (started) app.quit();
@@ -103,6 +104,9 @@ app.whenReady().then(() => {
     win.webContents.send('window:expandChanged', expanded);
   });
 
+  // Initialize auto-updater (checks on launch + every 4h)
+  initAutoUpdater();
+
   // Start sync engine with tools that have stored credentials
   const connectedTools = getConnectedToolIds();
   if (connectedTools.length > 0) {
@@ -123,6 +127,7 @@ app.whenReady().then(() => {
 app.on('before-quit', () => {
   globalShortcut.unregisterAll();
   notificationScheduler.stop();
+  stopUpdateChecks();
   closeDb();
 });
 

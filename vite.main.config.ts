@@ -29,7 +29,7 @@ export default defineConfig({
   define,
   build: {
     rollupOptions: {
-      external: ['better-sqlite3'],
+      external: ['better-sqlite3', 'electron-updater'],
     },
   },
 });

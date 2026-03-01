@@ -1,11 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const footerLinks = {
+const footerLinks: Record<string, { label: string; href: string; external?: boolean }[]> = {
   Product: [
     { label: "Features", href: "/#features" },
     { label: "Guide", href: "/guide" },
     { label: "Pricing", href: "/pricing" },
+    { label: "Feedback", href: "https://zaptask.canny.io", external: true },
     { label: "Download", href: "/download" },
     { label: "Contact", href: "/contact" },
   ],
@@ -50,12 +51,23 @@ export function Footer() {
               <ul className="space-y-2.5">
                 {links.map((link) => (
                   <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      className="text-sm text-gray-500 hover:text-foreground transition-colors"
-                    >
-                      {link.label}
-                    </Link>
+                    {link.external ? (
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-gray-500 hover:text-foreground transition-colors"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className="text-sm text-gray-500 hover:text-foreground transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>

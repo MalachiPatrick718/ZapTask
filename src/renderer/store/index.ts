@@ -149,6 +149,15 @@ interface ZapStore {
   // Upsell tracking
   lastUpsellAt: string | null;
   setLastUpsellAt: (date: string) => void;
+
+  // Updates
+  updateStatus: 'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'error';
+  updateInfo: { version: string; releaseNotes?: string; downloadUrl?: string } | null;
+  updateProgress: number;
+  updateError: string | null;
+  setUpdateStatus: (status: ZapStore['updateStatus'], info?: ZapStore['updateInfo']) => void;
+  setUpdateProgress: (pct: number) => void;
+  setUpdateError: (err: string | null) => void;
 }
 
 export const useStore = create<ZapStore>()(
@@ -324,6 +333,19 @@ export const useStore = create<ZapStore>()(
       // Upsell tracking
       lastUpsellAt: null,
       setLastUpsellAt: (date) => set({ lastUpsellAt: date }),
+
+      // Updates
+      updateStatus: 'idle',
+      updateInfo: null,
+      updateProgress: 0,
+      updateError: null,
+      setUpdateStatus: (status, info) => set((s) => ({
+        updateStatus: status,
+        updateInfo: info !== undefined ? info : s.updateInfo,
+        updateError: status !== 'error' ? null : s.updateError,
+      })),
+      setUpdateProgress: (pct) => set({ updateProgress: pct }),
+      setUpdateError: (err) => set({ updateError: err, updateStatus: 'error' }),
     }),
     {
       name: 'zaptask-store',

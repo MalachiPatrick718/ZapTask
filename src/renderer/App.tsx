@@ -227,6 +227,27 @@ export function App() {
     return cleanup;
   }, [selectTask, setActivePanel, setActiveView]);
 
+  // Listen for update status events from main process
+  const setUpdateStatus = useStore((s) => s.setUpdateStatus);
+  const setUpdateProgress = useStore((s) => s.setUpdateProgress);
+  const setUpdateError = useStore((s) => s.setUpdateError);
+  useEffect(() => {
+    const cleanup = window.zaptask.onUpdateStatus((data) => {
+      if (data.status === 'error') {
+        setUpdateError(data.error || 'Update check failed');
+      } else if (data.status === 'downloading' && data.progress != null) {
+        setUpdateProgress(data.progress);
+        setUpdateStatus('downloading');
+      } else {
+        setUpdateStatus(
+          data.status as any,
+          data.version ? { version: data.version, releaseNotes: data.releaseNotes, downloadUrl: data.downloadUrl } : undefined,
+        );
+      }
+    });
+    return cleanup;
+  }, [setUpdateStatus, setUpdateProgress, setUpdateError]);
+
   // Listen for synced tasks from integrations (gcal, jira, notion, etc.)
   const addTask = useStore((s) => s.addTask);
   const updateTask = useStore((s) => s.updateTask);

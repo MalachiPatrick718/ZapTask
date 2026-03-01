@@ -8,6 +8,7 @@ import { EnergyEditor } from './shared/EnergyEditor';
 
 declare const __APP_VERSION__: string;
 const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.1.7';
+const CANNY_URL = 'https://zaptask.canny.io';
 
 type SettingsTab = 'integrations' | 'energy' | 'preferences' | 'account' | 'support';
 
@@ -602,6 +603,136 @@ function PreferencesTab() {
   );
 }
 
+function UpdateCard() {
+  const updateStatus = useStore((s) => s.updateStatus);
+  const updateInfo = useStore((s) => s.updateInfo);
+  const updateProgress = useStore((s) => s.updateProgress);
+  const updateError = useStore((s) => s.updateError);
+  const addToast = useStore((s) => s.addToast);
+
+  const handleCheck = async () => {
+    try {
+      await window.zaptask.app.checkForUpdate();
+    } catch {
+      addToast('Failed to check for updates', 'error');
+    }
+  };
+
+  const handleDownload = async () => {
+    if (updateInfo?.downloadUrl) {
+      await window.zaptask.app.openExternal(updateInfo.downloadUrl);
+    }
+  };
+
+  const handleInstall = async () => {
+    try {
+      await window.zaptask.app.installUpdate();
+    } catch {
+      addToast('Failed to install update', 'error');
+    }
+  };
+
+  const cardStyle = {
+    marginTop: 8,
+    padding: '14px',
+    background: updateStatus === 'available' || updateStatus === 'ready'
+      ? 'color-mix(in srgb, var(--accent) 5%, var(--surface))'
+      : 'var(--surface)',
+    border: `1px solid ${updateStatus === 'available' || updateStatus === 'ready' ? 'var(--accent)' : 'var(--border)'}`,
+    borderRadius: 'var(--radius-md)',
+  };
+
+  return (
+    <div style={cardStyle}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div>
+          <div style={{ fontSize: 13, fontFamily: 'var(--font-mono)', color: 'var(--text3)', marginBottom: 2 }}>
+            App Version
+          </div>
+          <div style={{ fontSize: 14, color: 'var(--text1)', fontWeight: 500 }}>{APP_VERSION}</div>
+        </div>
+      </div>
+
+      {/* Idle — show check button */}
+      {(updateStatus === 'idle' || updateStatus === 'checking') && (
+        <Btn
+          size="sm"
+          variant="secondary"
+          onClick={handleCheck}
+          disabled={updateStatus === 'checking'}
+          style={{ width: '100%', marginTop: 4 }}
+        >
+          {updateStatus === 'checking' ? 'Checking...' : 'Check for updates'}
+        </Btn>
+      )}
+
+      {/* Update available */}
+      {updateStatus === 'available' && updateInfo && (
+        <div style={{ marginTop: 4 }}>
+          <div style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 600, marginBottom: 6 }}>
+            v{updateInfo.version} available
+          </div>
+          {updateInfo.releaseNotes && (
+            <div style={{
+              fontSize: 12, color: 'var(--text3)', marginBottom: 8,
+              maxHeight: 60, overflow: 'hidden', lineHeight: 1.4,
+            }}>
+              {updateInfo.releaseNotes.slice(0, 200)}
+            </div>
+          )}
+          <Btn size="sm" onClick={handleDownload} style={{ width: '100%' }}>
+            Download Update
+          </Btn>
+        </div>
+      )}
+
+      {/* Downloading */}
+      {updateStatus === 'downloading' && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 6 }}>
+            Downloading... {updateProgress}%
+          </div>
+          <div style={{
+            height: 4, borderRadius: 2,
+            background: 'var(--border)', overflow: 'hidden',
+          }}>
+            <div style={{
+              height: '100%', borderRadius: 2,
+              background: 'var(--accent)',
+              width: `${updateProgress}%`,
+              transition: 'width 300ms ease',
+            }} />
+          </div>
+        </div>
+      )}
+
+      {/* Ready to install */}
+      {updateStatus === 'ready' && (
+        <div style={{ marginTop: 4 }}>
+          <div style={{ fontSize: 13, color: 'var(--accent)', fontWeight: 600, marginBottom: 6 }}>
+            Update ready
+          </div>
+          <Btn size="sm" onClick={handleInstall} style={{ width: '100%' }}>
+            Restart & Install
+          </Btn>
+        </div>
+      )}
+
+      {/* Error */}
+      {updateStatus === 'error' && (
+        <div style={{ marginTop: 4 }}>
+          <div style={{ fontSize: 12, color: 'var(--red)', marginBottom: 6 }}>
+            {updateError || 'Update check failed'}
+          </div>
+          <Btn size="sm" variant="secondary" onClick={handleCheck} style={{ width: '100%' }}>
+            Try again
+          </Btn>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AccountTab() {
   const user = useStore((s) => s.user);
   const setUser = useStore((s) => s.setUser);
@@ -706,18 +837,7 @@ function AccountTab() {
           )}
         </div>
 
-        <div style={{
-          marginTop: 8,
-          padding: '14px',
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius-md)',
-        }}>
-          <div style={{ fontSize: 13, fontFamily: 'var(--font-mono)', color: 'var(--text3)', marginBottom: 4 }}>
-            App Version
-          </div>
-          <div style={{ fontSize: 14, color: 'var(--text1)' }}>{APP_VERSION}</div>
-        </div>
+        <UpdateCard />
 
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 8 }}>
           {confirmClear ? (
@@ -822,10 +942,36 @@ function SupportTab() {
         Support & Feedback
       </h3>
       <p style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 20 }}>
-        Found a bug or have an idea? Send us feedback — it opens your email client.
+        Found a bug or have an idea? Let us know.
       </p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 480 }}>
+        {/* Canny feedback board */}
+        <div style={{
+          padding: '14px',
+          background: 'color-mix(in srgb, var(--accent) 5%, var(--surface))',
+          border: '1px solid var(--accent)',
+          borderRadius: 'var(--radius-md)',
+        }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text1)', marginBottom: 4 }}>
+            Feature Requests & Feedback
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 10, lineHeight: 1.5 }}>
+            Vote on features, submit ideas, and track what we're building next on our public feedback board.
+          </div>
+          <Btn
+            size="sm"
+            onClick={() => window.zaptask.app.openExternal(CANNY_URL)}
+            style={{ width: '100%' }}
+          >
+            Open Feedback Board
+          </Btn>
+        </div>
+
+        <div style={{ fontSize: 12, color: 'var(--text3)', fontFamily: 'var(--font-mono)', textAlign: 'center' as const }}>
+          or send feedback via email
+        </div>
+
         {/* Category */}
         <div>
           <label style={{
