@@ -10,7 +10,6 @@ const navLinks: { label: string; href: string; external?: boolean }[] = [
   { label: "Guide", href: "/guide" },
   { label: "Pricing", href: "/pricing" },
   { label: "Feedback", href: "https://zaptask.canny.io", external: true },
-  { label: "Download", href: "/download" },
 ];
 
 export function Navbar() {
