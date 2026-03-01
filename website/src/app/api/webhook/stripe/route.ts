@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import crypto from 'crypto';
-import { redis } from '@/lib/redis';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+import { getRedis } from '@/lib/redis';
 
 function generateLicenseKey(): string {
   const hex = crypto.randomBytes(8).toString('hex').toUpperCase();
@@ -12,7 +9,7 @@ function generateLicenseKey(): string {
 }
 
 /** Get current_period_end from a subscription's first item */
-async function getSubscriptionPeriodEnd(subscriptionId: string): Promise<string> {
+async function getSubscriptionPeriodEnd(stripe: Stripe, subscriptionId: string): Promise<string> {
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
   const item = subscription.items.data[0];
   if (item?.current_period_end) {
@@ -25,6 +22,10 @@ async function getSubscriptionPeriodEnd(subscriptionId: string): Promise<string>
 }
 
 export async function POST(req: NextRequest) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+  const redis = getRedis();
+
   const body = await req.text();
   const sig = req.headers.get('stripe-signature');
   if (!sig) {
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
     // Get expiration from the subscription (handles both trial and immediate)
     let expiresAt: string;
     try {
-      expiresAt = await getSubscriptionPeriodEnd(subscriptionId);
+      expiresAt = await getSubscriptionPeriodEnd(stripe, subscriptionId);
     } catch {
       // Fallback: compute manually from line items
       const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
@@ -96,7 +97,7 @@ export async function POST(req: NextRequest) {
       const subscriptionId = invoice.lines?.data?.[0]?.subscription;
       const subId = typeof subscriptionId === 'string' ? subscriptionId : subscriptionId?.id;
       if (subId) {
-        const newExpiresAt = await getSubscriptionPeriodEnd(subId);
+        const newExpiresAt = await getSubscriptionPeriodEnd(stripe, subId);
         const raw = await redis.get<string>(`license:${key}`);
         if (raw) {
           const record = typeof raw === 'string' ? JSON.parse(raw) : raw;

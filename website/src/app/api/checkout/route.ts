@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-const PRICES: Record<string, string | undefined> = {
-  monthly: process.env.STRIPE_PRICE_ID_MONTHLY,
-  yearly: process.env.STRIPE_PRICE_ID_YEARLY,
-};
-
 export async function GET(req: NextRequest) {
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+  const PRICES: Record<string, string | undefined> = {
+    monthly: process.env.STRIPE_PRICE_ID_MONTHLY,
+    yearly: process.env.STRIPE_PRICE_ID_YEARLY,
+  };
+
   const plan = req.nextUrl.searchParams.get('plan');
   const trial = req.nextUrl.searchParams.get('trial');
 

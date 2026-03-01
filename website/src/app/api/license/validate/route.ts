@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { redis } from '@/lib/redis';
+import { getRedis } from '@/lib/redis';
 
 interface LicenseRecord {
   email: string;
@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ valid: false, error: 'Missing key' }, { status: 400 });
     }
 
+    const redis = getRedis();
     const raw = await redis.get<string>(`license:${key}`);
     if (!raw) {
       return NextResponse.json({ valid: false, error: 'Invalid key' });
