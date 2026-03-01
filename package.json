@@ -1,7 +1,7 @@
 {
   "name": "zaptask",
   "productName": "ZapTask",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "A desktop productivity widget that unifies tasks from multiple tools",
   "main": ".vite/build/main.js",
   "private": true,
