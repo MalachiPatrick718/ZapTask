@@ -139,7 +139,7 @@ export function collapseWindow(): void {
   const bounds = widgetBounds || {
     x: screenWidth - 360 - 20,
     y: screenHeight - 660 - 20,
-    width: 400,
+    width: 360,
     height: 660,
   };
 

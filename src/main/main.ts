@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { app, BrowserWindow, nativeImage, globalShortcut } from 'electron';
+import { app, BrowserWindow, nativeImage, globalShortcut, Menu } from 'electron';
 
 // Crash handlers — log but don't crash the app
 process.on('unhandledRejection', (reason) => {
@@ -50,6 +50,28 @@ if (process.defaultApp) {
 }
 
 app.whenReady().then(() => {
+  // Set app name for macOS menu bar (shows "Electron" in dev otherwise)
+  if (process.platform === 'darwin') {
+    app.setName('ZapTask');
+    const template: Electron.MenuItemConstructorOptions[] = [
+      {
+        label: 'ZapTask',
+        submenu: [
+          { role: 'about', label: 'About ZapTask' },
+          { type: 'separator' },
+          { role: 'hide', label: 'Hide ZapTask' },
+          { role: 'hideOthers' },
+          { role: 'unhide' },
+          { type: 'separator' },
+          { role: 'quit', label: 'Quit ZapTask' },
+        ],
+      },
+      { role: 'editMenu' },
+      { role: 'windowMenu' },
+    ];
+    Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+  }
+
   // Set dock icon (macOS) — in dev, process.cwd() is project root
   if (process.platform === 'darwin') {
     const iconPath = app.isPackaged
