@@ -42,6 +42,7 @@ const DEFAULT_TOOLS: ToolState[] = [
   { toolId: 'gcal', connected: false, email: '', lastSyncAt: null, syncStatus: 'idle', syncError: null },
   { toolId: 'outlook', connected: false, email: '', lastSyncAt: null, syncStatus: 'idle', syncError: null },
   { toolId: 'apple_cal', connected: false, email: '', lastSyncAt: null, syncStatus: 'idle', syncError: null },
+  { toolId: 'todoist', connected: false, email: '', lastSyncAt: null, syncStatus: 'idle', syncError: null },
 ];
 
 // === Subscription defaults ===

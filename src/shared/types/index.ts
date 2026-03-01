@@ -1,5 +1,5 @@
 // === Source integrations ===
-export type TaskSource = 'jira' | 'asana' | 'notion' | 'monday' | 'gcal' | 'outlook' | 'apple_cal' | 'local';
+export type TaskSource = 'jira' | 'asana' | 'notion' | 'monday' | 'gcal' | 'outlook' | 'apple_cal' | 'todoist' | 'local';
 
 // === Energy levels (3 levels per brief) ===
 export type EnergyLevel = 'high' | 'medium' | 'low';

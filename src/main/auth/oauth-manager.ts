@@ -18,6 +18,7 @@ const CLIENT_CREDENTIALS: Record<string, { clientId: string; clientSecret: strin
   monday: { clientId: process.env.MONDAY_CLIENT_ID || '', clientSecret: process.env.MONDAY_CLIENT_SECRET || '' },
   gcal: { clientId: process.env.GCAL_CLIENT_ID || '', clientSecret: process.env.GCAL_CLIENT_SECRET || '' },
   outlook: { clientId: process.env.OUTLOOK_CLIENT_ID || '', clientSecret: process.env.OUTLOOK_CLIENT_SECRET || '' },
+  todoist: { clientId: process.env.TODOIST_CLIENT_ID || '', clientSecret: process.env.TODOIST_CLIENT_SECRET || '' },
 };
 
 function getClientCredentials(toolId: string): { clientId: string; clientSecret: string } {

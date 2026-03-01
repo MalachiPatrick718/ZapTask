@@ -6,6 +6,7 @@ export const TOOL_META: Record<string, { name: string; color: string; descriptio
   gcal: { name: 'Google Calendar', color: '#4285F4', description: 'Import events from Google Calendar' },
   outlook: { name: 'Outlook', color: '#0078D4', description: 'Sync tasks and events from Outlook' },
   apple_cal: { name: 'Apple Calendar', color: '#FF3B30', description: 'Import events from Apple Calendar' },
+  todoist: { name: 'Todoist', color: '#E44332', description: 'Sync tasks from your Todoist projects' },
 };
 
-export const TOOL_ORDER = ['jira', 'asana', 'notion', 'monday', 'gcal', 'outlook', 'apple_cal'] as const;
+export const TOOL_ORDER = ['jira', 'asana', 'notion', 'monday', 'todoist', 'gcal', 'outlook', 'apple_cal'] as const;

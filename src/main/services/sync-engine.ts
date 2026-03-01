@@ -8,6 +8,7 @@ import { GCalService } from './gcal';
 import { MondayService } from './monday';
 import { OutlookService } from './outlook';
 import { AppleCalService } from './apple-cal';
+import { TodoistService } from './todoist';
 import { IPC } from '../../shared/types/ipc-channels';
 import { getValidAccessToken } from '../auth/oauth-manager';
 
@@ -19,6 +20,7 @@ const services: Record<string, IntegrationService> = {
   gcal: new GCalService(),
   outlook: new OutlookService(),
   apple_cal: new AppleCalService(),
+  todoist: new TodoistService(),
 };
 
 export class SyncEngine {

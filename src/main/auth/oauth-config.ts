@@ -57,6 +57,13 @@ export const OAUTH_PROVIDERS: Record<string, OAuthProviderConfig> = {
     usePKCE: true,
     tokenAuthMethod: 'body',
   },
+  todoist: {
+    authUrl: 'https://todoist.com/oauth/authorize',
+    tokenUrl: 'https://todoist.com/oauth/access_token',
+    scopes: ['data:read'],
+    usePKCE: false,
+    tokenAuthMethod: 'body',
+  },
 };
 
 export function getRedirectUri(port: number): string {
