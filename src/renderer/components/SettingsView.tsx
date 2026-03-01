@@ -6,6 +6,9 @@ import { useSubscription } from '../hooks/useSubscription';
 import { TOOL_META } from './shared/tool-meta';
 import { EnergyEditor } from './shared/EnergyEditor';
 
+declare const __APP_VERSION__: string;
+const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '0.1.7';
+
 type SettingsTab = 'integrations' | 'energy' | 'preferences' | 'account' | 'support';
 
 const sidebarItems: { id: SettingsTab; label: string; icon: string }[] = [
@@ -713,7 +716,7 @@ function AccountTab() {
           <div style={{ fontSize: 13, fontFamily: 'var(--font-mono)', color: 'var(--text3)', marginBottom: 4 }}>
             App Version
           </div>
-          <div style={{ fontSize: 14, color: 'var(--text1)' }}>0.1.0 MVP</div>
+          <div style={{ fontSize: 14, color: 'var(--text1)' }}>{APP_VERSION}</div>
         </div>
 
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 8 }}>
